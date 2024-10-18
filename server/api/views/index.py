@@ -12,11 +12,19 @@ def status():
 @app_views.route('stats')
 def stats():
     """Return the count of all classes"""
+    from models.solution_result import Solution_Result
+    from models.submission import Submission
     from models.user import User
     from models.user_profile import User_Profile
+    from models.task import Task
+    from models.task_test_cases import Task_Test_Cases
     from models import storage
 
     return {
             "Users": storage.count(User),
-            "User_Profile": storage.count(User_Profile)
+            "User_Profile": storage.count(User_Profile),
+            "Tasks": storage.count(Task),
+            "Task_Test_Cases": storage.count(Task_Test_Cases),
+            "Submissions": storage.count(Submission),
+            "Solution_Results": storage.count(Solution_Result)
             }
