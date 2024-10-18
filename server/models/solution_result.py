@@ -11,8 +11,6 @@ class Solution_Result(BaseModel, Base):
                            ForeignKey('submissions.id', ondelete='CASCADE'),
                            nullable=False)
     output = Column(Enum('pass', 'fail', 'error'), nullable=False)
-    execution_time = Column(String(255), nullable=False)
-    memory_usage = Column(String(255), nullable=False)
     submission = relationship("Submission", back_populates="solution_results",)
 
 
