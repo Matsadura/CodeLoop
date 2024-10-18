@@ -18,7 +18,7 @@ PORT = 5000
 @app.route('/volumes')
 def volume():
     """ A dummy route to test volumes of docker"""
-    return "Testing volumes: -Zidane-"
+    return "Testing volumes: -<change me>-"
 
 
 @app.errorhandler(404)
