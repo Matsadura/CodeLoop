@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: server/flask.dockerfile
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./server:/Learning_platform/server
+    environment:
+      MOVIE_DB_HOST: mysql_db
+      MOVIE_DB_USER: CODE_USER
+      MOVIE_DB_PASSWORD: CODE_PASSWORD
+      MOVIE_DB_NAME: CODE_DB
+      PYTHONPATH: /Learning_platform
+    depends_on:
+      - mysql
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: CODE_DB
+      MYSQL_USER: CODE_USER
+      MYSQL_PASSWORD: CODE_PASSWORD
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:
