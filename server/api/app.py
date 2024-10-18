@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """ Starts the Flask web app """
 import os
+from api.views import app_views
 from dotenv import load_dotenv
 from flask import Flask, jsonify
 from flask_cors import CORS
@@ -10,6 +11,7 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app, supports_credentials=True, resources={r"*": {"origins": "*"}})
 app.url_map.strict_slashes = False
+app.register_blueprint(app_views)
 HOST = "0.0.0.0"
 PORT = 5000
 
