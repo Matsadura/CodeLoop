@@ -10,10 +10,10 @@ services:
     volumes:
       - ./server:/Learning_platform/server
     environment:
-      MOVIE_DB_HOST: mysql_db
-      MOVIE_DB_USER: CODE_USER
-      MOVIE_DB_PASSWORD: CODE_PASSWORD
-      MOVIE_DB_NAME: CODE_DB
+      CODE_DB_HOST: mysql_db
+      CODE_DB_USER: CODE_USER
+      CODE_DB_PASSWORD: CODE_PASSWORD
+      CODE_DB_NAME: CODE_DB
       PYTHONPATH: /Learning_platform
     depends_on:
       - mysql
