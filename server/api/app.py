@@ -7,6 +7,7 @@ from datetime import timedelta
 from dotenv import load_dotenv
 from flask import Flask, jsonify
 from flask_cors import CORS
+from models import storage
 
 
 load_dotenv()
@@ -26,6 +27,12 @@ PORT = 5000
 def volume():
     """ A dummy route to test volumes of docker"""
     return "Testing volumes: -<change me >-"
+
+
+@app.teardown_appcontext
+def teardown_db(exception):
+    """ Closes the storage session """
+    storage.close()
 
 
 @app.errorhandler(404)
