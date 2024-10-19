@@ -11,8 +11,10 @@ class Task(BaseModel, Base):
     title = Column(String(255), nullable=False)
     description = Column(TEXT, nullable=False)
     difficulty = Column(Enum('easy', 'medium', 'hard'), nullable=False)
+    user_id = Column(String(60), nullable=False)
     submissions = relationship("Submission", back_populates="task",)
     task_test_cases = relationship("Task_Test_Cases", back_populates="task",)
+    user_favorites = relationship("User_Favorite", back_populates="task",)
 
     def __init__(self, *args, **kwargs):
         """Initializes task"""

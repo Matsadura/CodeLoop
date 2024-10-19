@@ -4,13 +4,26 @@ Contains the class DBStorage
 """
 
 from models.base_model import Base
+from models.solution_result import Solution_Result
+from models.submission import Submission
+from models.task import Task
+from models.task_test_cases import Task_Test_Cases
 from models.user import User
+from models.user_favorite import User_Favorite
 from models.user_profile import User_Profile
 from os import getenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-classes = {"User": User, "User_Profile": User_Profile}
+classes = {"User": User,
+           "User_Profile": User_Profile,
+           "Task": Task,
+           "Task_Test_Cases":
+           Task_Test_Cases,
+           "Submission": Submission,
+           "Solution_Result": Solution_Result,
+           "User_Favorite": User_Favorite
+           }
 
 
 class DBStorage:
@@ -43,6 +56,7 @@ class DBStorage:
 
     def all_list(self, cls=None):
         """query on the current database session and return a list"""
+        objs = []
         for clss in classes:
             if cls is None or cls is classes[clss] or cls is clss:
                 objs = self.__session.query(classes[clss]).all()
