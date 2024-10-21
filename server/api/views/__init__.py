@@ -8,3 +8,4 @@ from api.views.index import *  # nopep8
 from api.views.auth import *  # nopep8
 from api.views.users import *  # nopep8
 from api.views.tasks import *  # nopep8
+from api.views.task_test_cases import *  # nopep8
