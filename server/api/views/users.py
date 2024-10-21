@@ -3,7 +3,7 @@ from api.views import app_views
 from api.views.auth import isAuthenticated
 from datetime import datetime
 from flask import jsonify, request
-from flask_jwt_extended import get_jwt_identity, jwt_required
+from flask_jwt_extended import jwt_required
 from models import storage
 from models.user import User
 
