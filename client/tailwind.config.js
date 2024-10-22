@@ -56,7 +56,10 @@ export default {
           red: '#f44250'
         },
       },
+      fontFamily: {
+        'sans': ['Inter', 'system-ui']
+      }
     },
-  },
   plugins: [],
+}
 }
