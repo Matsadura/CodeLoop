@@ -1,20 +1,19 @@
 /* This example requires Tailwind CSS v2.0+ */
-import { Fragment } from 'react'
-import { Disclosure, Menu, Transition } from '@headlessui/react'
-import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/react/24/outline'
+import { Fragment } from 'react';
+import { Disclosure, Menu, Transition } from '@headlessui/react';
+import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { FaCode } from "react-icons/fa6";
 
 const user = {
   name: 'Tom Cook',
   email: 'tom@example.com',
   imageUrl:
-    'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
+    'https://i.pinimg.com/originals/ed/1b/58/ed1b58e5741ea17739e673a6d30182df.jpg',
 }
 const navigation = [
   { name: 'Dashboard', href: '#', current: true },
-  { name: 'Team', href: '#', current: false },
-  { name: 'Projects', href: '#', current: false },
-  { name: 'Calendar', href: '#', current: false },
-  { name: 'Reports', href: '#', current: false },
+  { name: 'Tasks', href: '#', current: false },
+  { name: 'Leaderboard', href: '#', current: false },
 ]
 const userNavigation = [
   { name: 'Your Profile', href: '#' },
@@ -30,18 +29,14 @@ export default function NavBar() {
   return (
     <>
       <div className="min-h-full">
-        <Disclosure as="nav" className="bg-violet-400">
+        <Disclosure as="nav" className="bg-violet-500">
           {({ open }) => (
             <>
               <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div className="flex h-16 items-center justify-between">
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
-                      <img
-                        className="h-8 w-8"
-                        src="https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=500"
-                        alt="Your Company"
-                      />
+                      <FaCode className='text-crimson-200 h-8 w-8 text-4xl'/>
                     </div>
                     <div className="hidden md:block">
                       <div className="ml-10 flex items-baseline space-x-4">
@@ -51,7 +46,7 @@ export default function NavBar() {
                             href={item.href}
                             className={classNames(
                               item.current
-                                ? 'bg-gray-900 text-white'
+                                ? 'bg- text-white'
                                 : 'text-gray-300 hover:bg-gray-700 hover:text-white',
                               'px-3 py-2 rounded-md text-sm font-medium'
                             )}
@@ -177,9 +172,9 @@ export default function NavBar() {
           )}
         </Disclosure>
 
-        <header className="bg-white shadow-sm">
+        <header className="bg-violet-400 shadow-sm">
           <div className="mx-auto max-w-7xl py-4 px-4 sm:px-6 lg:px-8">
-            <h1 className="text-lg font-semibold leading-6 text-gray-900">Dashboard</h1>
+            <h1 className="text-lg font-semibold leading-6 text-gray-100">Dashboard</h1>
           </div>
         </header>
         <main>
