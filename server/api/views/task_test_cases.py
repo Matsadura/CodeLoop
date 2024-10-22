@@ -91,6 +91,7 @@ def handle_task_test_case(task_id, test_case_id):
             task_test_case.input = data['input']
         if 'expected_output' in data:
             task_test_case.expected_output = data['expected_output']
+        task_test_case.updated_at = datetime.now()
         storage.save()
         return jsonify(task_test_case.to_dict())
 

@@ -3,7 +3,7 @@ from api.views import app_views
 from api.views.auth import isAuthenticated
 from datetime import datetime
 from flask import jsonify, request
-from flask_jwt_extended import get_jwt_identity, jwt_required
+from flask_jwt_extended import jwt_required
 from models import storage
 from models.task import Task
 
@@ -26,6 +26,9 @@ def handle_tasks():
             return jsonify({"error": "No data provided"}), 400
         if not data.get('title') or not data.get('description'):
             return jsonify({"error": "Invalid request"}), 400
+        existing_task = storage.get_specific(Task, 'title', data['title'])
+        if existing_task:
+            return jsonify({'error': "Task name already exists"}), 409
         task = Task(user_id=current_user, **data)
         storage.new(task)
         storage.save()
