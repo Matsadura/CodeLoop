@@ -1,0 +1,6 @@
+{
+  "devDependencies": {
+    "@headlessui/react": "^2.1.10",
+    "@heroicons/react": "^2.1.5"
+  }
+}
