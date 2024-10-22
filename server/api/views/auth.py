@@ -2,7 +2,7 @@
 from api.views import app_views
 from flask import jsonify, request
 from flask_jwt_extended import (JWTManager, create_access_token,
-                                jwt_required, get_jwt_identity)
+                                get_jwt_identity)
 from models import storage
 from models.user import User
 
@@ -71,4 +71,4 @@ def login():
         return jsonify({'error': 'Invalid email or password'}), 401
 
     token = create_access_token(identity=user)
-    return jsonify({'token': token, 'user_id': user.id})
+    return jsonify({'token': token})
