@@ -4,6 +4,7 @@ import InputWithLabel from "../components/InputWithLabel";
 import PrimaryBtn from "../components/PrimaryBtn";
 import LinkBold from "../components/LinkBold";
 
+
 export default function Register() {
     return (
       <>
