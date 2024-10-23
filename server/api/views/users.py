@@ -1,4 +1,28 @@
-""" Users related routes """
+""" Users related routes
+This module contains routes for managing user-related data, including
+creating, retrieving, updating, and deleting user profiles.
+This module requires JWT authentication for access control.
+
+Routes:
+    - /users:
+        - GET: Retrieve the current user's profile.
+        - DELETE: Delete the current user's profile.
+        - PUT: Update the current user's profile.
+
+Attributes:
+    - User: Class representing users.
+    - storage: Object for interacting with the database storage.
+
+Exceptions:
+    - Invalid token: Raised when the JWT token is invalid.
+    - User not found: Raised when the user is not found in the database.
+    - Unauthorized: Raised when the user is not authorized to access
+        or modify the data.
+    - Invalid data: Raised when the request data is invalid or missing.
+
+Returns:
+    - JSON response containing the user data or appropriate error messages.
+"""
 from api.views import app_views
 from api.views.auth import isAuthenticated
 from datetime import datetime
@@ -26,7 +50,20 @@ def get_user_profile():
 @app_views.route('/users', methods=['DELETE', 'PUT'])
 @jwt_required()
 def update_user_profile():
-    """Update user profile or delete user profile """
+    """Update user profile or delete user profile
+
+    - Header: Authorization Bearer Token (required)
+
+    DELETE:
+        Output:
+            - Message: "User profile deleted"
+    PUT:
+        - Input:
+            - first_name: String (optional)
+            - last_name: String (optional)
+        Output:
+            - User profile data
+    """
     current_user = isAuthenticated()
     user_profile = storage.get_specific(User, 'id', current_user)
     if not user_profile:
