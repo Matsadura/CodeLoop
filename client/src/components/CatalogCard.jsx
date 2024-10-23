@@ -13,6 +13,51 @@ const catalogs = [
     imageUrl:
       'https://www.britefish.net/wp-content/uploads/2019/07/logo-c-1.png',
   },
+  {
+    id: 5,
+    title: 'Learn about parsing shell commands, executing programs and more',
+    description: 'Learn about parsing shell commands, executing programs and more',
+    tasksCount: 61,
+    difficulty: 'hard',
+    imageUrl:
+      'https://www.britefish.net/wp-content/uploads/2019/07/logo-c-1.png',
+  },
+  {
+    id: 5,
+    title: 'Learn about parsing shell commands, executing programs and more',
+    description: 'Learn about parsing shell commands, executing programs and more',
+    tasksCount: 61,
+    difficulty: 'hard',
+    imageUrl:
+      'https://www.britefish.net/wp-content/uploads/2019/07/logo-c-1.png',
+  },
+  {
+    id: 5,
+    title: 'Learn about parsing shell commands, executing programs and more',
+    description: 'Learn about parsing shell commands, executing programs and more',
+    tasksCount: 61,
+    difficulty: 'hard',
+    imageUrl:
+      'https://www.britefish.net/wp-content/uploads/2019/07/logo-c-1.png',
+  },
+  {
+    id: 5,
+    title: 'Learn about parsing shell commands, executing programs and more',
+    description: 'Learn about parsing shell commands, executing programs and more',
+    tasksCount: 61,
+    difficulty: 'hard',
+    imageUrl:
+      'https://www.britefish.net/wp-content/uploads/2019/07/logo-c-1.png',
+  },
+  {
+    id: 5,
+    title: 'Write your Libft',
+    description: 'Your own library is not that hard',
+    tasksCount: 61,
+    difficulty: 'hard',
+    imageUrl:
+      'https://www.britefish.net/wp-content/uploads/2019/07/logo-c-1.png',
+  },
   
 ]
 
@@ -20,7 +65,7 @@ export default function Example() {
   return (
     <ul role="list" className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {catalogs.map((catalog) => (
-        <li key={catalog.id} className="col-span-1 divide-y divide-gray-200 rounded-lg border bg-violet-400 shadow">
+        <li key={catalog.id} className="col-span-1 flex flex-col divide-y divide-gray-200 rounded-lg border bg-violet-400 shadow justify-between">
           <div className="flex w-full items-center justify-between space-x-6 p-6">
             <div className="w-[80%]">
               <div className="flex items-center">
@@ -33,8 +78,8 @@ export default function Example() {
             </div>
             <img className="h-20 w-20 flex-shrink-0 bg-violet-500" src={catalog.imageUrl} alt="" />
           </div>
-          <div>
-            <div className="-mt-px flex divide-gray-200">
+          <div className="">
+            <div className="-mt-px flex">
               
               <div className="flex w-0 flex-1">
                 <div
@@ -49,10 +94,10 @@ export default function Example() {
               <div className="flex w-0 flex-1">
                 <a
                   href={`catalogs/id`}
-                  className="relative mr-4 inline-flex w-0 flex-1 items-center justify-end rounded-bl-lg border border-transparent py-4 text-sm font-medium text-crimson-300 hover:text-crimson-200"
+                  className="relative mr-4 inline-flex w-0 flex-1 items-center justify-end rounded-bl-lg border border-transparent py-4 text-sm font-medium text-white hover:text-crimson-200"
                 >
                   <span className="ml-3 text-lg">Start</span>
-                  {/* <IoIosArrowDroprightCircle className="text-2xl"/> */}
+                  <MdArrowRightAlt className="text-2xl"/>
                 </a>
               </div>
             </div>
