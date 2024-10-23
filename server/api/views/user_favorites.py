@@ -1,4 +1,26 @@
-""" Handle user_favorites related routes """
+""" Handle user_favorites related routes
+
+This module contains routes for managing user_favorites tasks.
+These routes require JWT authentication for access control.
+
+Routes:
+    - /users/favorites:
+        - GET: Retrieve all user_favorites tasks.
+        - POST: Create a new user_favorite task.
+        - DELETE: Delete all user_favorite tasks.
+
+Exceptions:
+    - Invalid token: Raised when the JWT token is invalid.
+    - User not found: Raised when the user is not found in the database.
+    - Unauthorized: Raised when the user is not authorized to access
+        or modify the data.
+    - Invalid data: Raised when the request data is invalid or missing.
+
+Returns:
+    - JSON response containing the user_favorite data
+    or appropriate error messages.
+"""
+
 from api.views import app_views
 from api.views.auth import isAuthenticated
 from flask import jsonify, request
@@ -11,7 +33,12 @@ from models.task import Task
 @app_views.route('/users/favorites', methods=['GET', 'POST', 'DELETE'])
 @jwt_required()
 def handle_user_favorites():
-    """Handle user_favorites related requests"""
+    """Handle user_favorites related requests
+
+    - Header: Authorization Bearer Token (required)
+    POST & DELETE Input:
+        - title: String (required)
+    """
     current_user = isAuthenticated()
     if request.method == 'GET':  # Get all user_favorite tasks
         favorites = storage.all_list_specific(User_Favorite,

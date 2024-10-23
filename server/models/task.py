@@ -12,6 +12,7 @@ class Task(BaseModel, Base):
     description = Column(TEXT, nullable=False)
     difficulty = Column(Enum('easy', 'medium', 'hard'), nullable=False)
     user_id = Column(String(60), nullable=False)
+    # category TO IMPLEMENT LATER
     submissions = relationship("Submission", back_populates="task",)
     task_test_cases = relationship("Task_Test_Cases", back_populates="task",)
     user_favorites = relationship("User_Favorite", back_populates="task",)

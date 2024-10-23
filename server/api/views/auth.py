@@ -1,4 +1,17 @@
-"""Auth routes"""
+"""Auth routes
+
+This module contains routes for user authentication and registration.
+Routes:
+    - /register:
+        - POST: Register a new user.
+    - /login:
+        - POST: Log in a user and generate a JWT token.
+Exceptions:
+    - Invalid data: Raised when the request data is invalid or missing.
+    - User already exists: Raised when the username already exists.
+Returns:
+    - JSON response containing the user data or appropriate error messages.
+"""
 from api.views import app_views
 from flask import jsonify, request
 from flask_jwt_extended import (JWTManager, create_access_token,
@@ -31,7 +44,14 @@ def isAuthenticated():
 
 @app_views.route('/register', methods=['POST'])
 def register_user():
-    """Register a new user"""
+    """Register a new user
+    POST
+        Input:
+        - email: String (required)
+        - password: String (required)
+        - first_name: String (required)
+        - last_name: String (required)
+    """
     data = request.get_json()
     if not data:
         return jsonify({'error': 'No data provided'}), 400
@@ -57,7 +77,16 @@ def register_user():
 
 @app_views.route('/login', methods=['POST'])
 def login():
-    """Sign in an user"""
+    """Sign in an user
+
+    POST:
+        Input:
+            - email: String (required)
+            - password: String (required)
+        Returns:
+            - JSON response containing the user data
+            or appropriate error messages.
+    """
     data = request.get_json()
     if not data or 'email' not in data or 'password' not in data:
         return jsonify({'error': 'Missing email or password'}), 400
