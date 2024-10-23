@@ -1,4 +1,33 @@
-""" Task test cases related routes """
+""" Task test cases related routes
+This module contains routes for managing task test cases, including
+creating, retrieving, updating, and deleting test cases.
+This module requires JWT authentication for access control.
+
+Routes:
+    - /tasks/<task_id>/test_cases:
+        - POST: Create a new task test case.
+        - GET: Retrieve all test cases for a specific task.
+    - /tasks/<task_id>/test_cases/<test_case_id>:
+        - GET: Retrieve a specific task test case.
+        - PUT: Update a specific task test case.
+        - DELETE: Delete a specific task test case.
+
+Attributes:
+    - Task: Class representing tasks.
+    - Task_Test_Cases: Class representing task test cases.
+    - storage: Object for interacting with the database storage.
+
+Exceptions:
+    - Invalid token: Raised when the JWT token is invalid.
+    - User not found: Raised when the user is not found in the database.
+    - Unauthorized: Raised when the user is not authorized to access
+        or modify the data.
+    - Invalid data: Raised when the request data is invalid or missing.
+
+Returns:
+    - JSON response containing the task test case data or appropriate error
+        messages.
+"""
 from api.views import app_views
 from api.views.auth import isAuthenticated
 from datetime import datetime
@@ -12,7 +41,17 @@ from models.task_test_cases import Task_Test_Cases
 @app_views.route('/tasks/<task_id>/test_cases', methods=['POST', 'GET'])
 @jwt_required()
 def create_task_test_case(task_id):
-    """ Create a new task test case """
+    """ Create or retrieve task test cases
+    - Header: Authorization: Bearer <JWT>
+
+    POST:
+        - Input:
+            - input: String (required)
+            - expected_output: String (required)
+    GET:
+        - Output:
+            - List of task test cases for the specified task.
+    """
     current_user = isAuthenticated()
     task = storage.get_specific(Task, 'id', task_id)
     if not task:
@@ -63,7 +102,20 @@ def create_task_test_case(task_id):
                  methods=['GET', 'PUT', 'DELETE'])
 @jwt_required()
 def handle_task_test_case(task_id, test_case_id):
-    """ Get, update, or delete a task test case """
+    """ Get, update, or delete a task test case
+
+    - Header: Authorization: Bearer <JWT>
+    GET:
+        - Output:
+            - Task test case data.
+    PUT:
+        - Input:
+            - input: String (required)
+            - expected_output: String (required)
+    DELETE:
+    - Output:
+            - Empty response with status code 204.
+    """
     current_user = isAuthenticated()
     task = storage.get_specific(Task, 'id', task_id)
     if not task:
