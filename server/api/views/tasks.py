@@ -1,4 +1,31 @@
-""" Tasks related routes """
+""" Tasks related routes
+This module contains routes for managing tasks, including creating,
+retrieving, updating, and deleting tasks.
+This module requires JWT authentication for access control.
+
+Routes:
+    - /tasks:
+        - GET: Retrieve all tasks.
+        - POST: Create a new task.
+    - /tasks/<task_id>:
+        - GET: Retrieve a specific task.
+        - PUT: Update a specific task.
+        - DELETE: Delete a specific task.
+
+Attributes:
+    - Task: Class representing tasks.
+    - storage: Object for interacting with the database storage.
+
+Exceptions:
+    - Invalid token: Raised when the JWT token is invalid.
+    - User not found: Raised when the user is not found in the database.
+    - Unauthorized: Raised when the user is not authorized to access
+        or modify the data.
+    - Invalid data: Raised when the request data is invalid or missing.
+
+Returns:
+    - JSON response containing the task data or appropriate error messages.
+"""
 from api.views import app_views
 from api.views.auth import isAuthenticated
 from datetime import datetime
@@ -11,7 +38,17 @@ from models.task import Task
 @app_views.route('/tasks', methods=['GET', 'POST'])
 @jwt_required()
 def handle_tasks():
-    """Handle tasks related requests"""
+    """Handle tasks related requests
+
+    - Header: Authorization Bearer Token (required)
+
+    POST:
+        - Input:
+            - title: String (required)
+            - description: String (required)
+            - difficulty: String (required)
+            - category: String (required) # NOT IMPLEMENTED
+    """
     current_user = isAuthenticated()
     if request.method == 'GET':  # Get all tasks
         tasks = storage.all_list(Task)
@@ -40,7 +77,17 @@ def handle_tasks():
 @app_views.route('/tasks/<task_id>', methods=['GET', 'PUT', 'DELETE'])
 @jwt_required()
 def handle_specific_tasks(task_id):
-    """Handle tasks related requests"""
+    """Handle tasks related requests
+
+    - Header: Authorization Bearer Token (required)
+
+    PUT:
+        - Input:
+            - title: String (optional)
+            - description: String (optional)
+            - difficulty: String (optional)
+            - category: String (optional) # NOT IMPLEMENTED
+    """
     current_user = isAuthenticated()
 
     if request.method == 'GET':  # Get a specific task
