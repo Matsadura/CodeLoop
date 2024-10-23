@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import NavBar from './components/NavBar';
 import { useState, useEffect } from 'react';
 import NotFound from './components/NotFound';
+import Example from './components/CatalogCard';
 
 function Test({setTitle}) {
   useEffect(() => setTitle('This is a test!'), []);
@@ -17,7 +18,7 @@ function RoutesWithNav() {
   return <NavBar title={title}>
     <Routes>
       <Route path="/test" element={<Test setTitle={setTitle} />} />
-      <Route path="/catalog " element={<Test setTitle={setTitle} />} />
+      <Route path="/catalog" element={<Example setTitle={setTitle} />} />
       <Route path="/*" element={<NotFound setTitle={setTitle} />} />
     </Routes>
   </NavBar>
