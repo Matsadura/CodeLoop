@@ -10,6 +10,7 @@ class Solution_Result(BaseModel, Base):
     submission_id = Column(String(128),
                            ForeignKey('submissions.id', ondelete='CASCADE'),
                            nullable=False)
+    task_test_case_id = Column(String(128), nullable=False)
     output = Column(Enum('pass', 'fail', 'error'), nullable=False)
     submission = relationship("Submission", back_populates="solution_results",)
 
