@@ -56,7 +56,7 @@ def user_profile_routes():
 
     elif request.method == 'POST':  # Create new user profile
         if user_profile:
-            return jsonify({"error": "User profile already exists"}), 400
+            return jsonify({"error": "User profile already exists"}), 409
         data = request.get_json()
         if not data:
             return jsonify({"error": "Invalid data"}), 400
