@@ -1,6 +1,7 @@
 
 import { MdArrowRightAlt } from "react-icons/md";
 // import { IoIosArrowDroprightCircle } from "react-icons/io";
+import { MdArrowForward } from "react-icons/md";
 
 
 const catalogs = [
