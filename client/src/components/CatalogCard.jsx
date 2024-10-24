@@ -68,7 +68,7 @@ const catalogs = [
     imageUrl:
       'https://www.britefish.net/wp-content/uploads/2019/07/logo-c-1.png',
   },
-  
+
 ]
 
 export default function Example() {
@@ -115,7 +115,7 @@ export default function Example() {
                   className="relative mr-4 inline-flex w-0 flex-1 items-center font-bold justify-end rounded-bl-lg border border-transparent py-4 text-sm text-crimson-200 hover:text-crimson-100"
                 >
                   <span className="ml-3 text-sm">START</span>
-                  <TiArrowRight className="text-2xl"/>
+                  <TiArrowRight className="text-2xl" />
                 </a>
               </div>
             </div>
