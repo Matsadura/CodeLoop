@@ -1,4 +1,12 @@
-"""Handles Categories related routes"""
+"""Handles Categories related routes
+This module requires JWT authentication for access.
+
+Routes:
+    - /categories
+
+Returns:
+    JSON with appriopriate data or an error
+"""
 from api.views import app_views
 from flask import jsonify, request
 from flask_jwt_extended import jwt_required
@@ -9,7 +17,14 @@ from models.category import Category
 @app_views.route('/categories', methods=['GET', 'POST', 'DELETE', 'PUT'])
 @jwt_required()
 def categories():
-    """Handles Categories related routes"""
+    """Handles Categories related routes
+
+    - Header: Authorization Bearer <JWT> (required)
+
+    POST:
+        Input:
+            - title: String (required)
+    """
     if request.method == 'GET':
         categories = storage.all_list(Category)
         return jsonify([category.to_dict() for category in categories])
