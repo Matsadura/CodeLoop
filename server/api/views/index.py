@@ -19,9 +19,11 @@ def stats():
     from models.user_profile import User_Profile
     from models.task import Task
     from models.task_test_cases import Task_Test_Cases
+    from models.category import Category
     from models import storage
 
     return {
+            "Categories": storage.count(Category),
             "Users": storage.count(User),
             "User_Favorites": storage.count(User_Favorite),
             "User_Profile": storage.count(User_Profile),
