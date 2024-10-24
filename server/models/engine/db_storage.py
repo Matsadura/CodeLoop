@@ -4,6 +4,7 @@ Contains the class DBStorage
 """
 
 from models.base_model import Base
+from models.category import Category
 from models.solution_result import Solution_Result
 from models.submission import Submission
 from models.task import Task
@@ -22,7 +23,8 @@ classes = {"User": User,
            Task_Test_Cases,
            "Submission": Submission,
            "Solution_Result": Solution_Result,
-           "User_Favorite": User_Favorite
+           "User_Favorite": User_Favorite,
+           "Category": Category
            }
 
 
