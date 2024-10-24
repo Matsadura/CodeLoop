@@ -10,13 +10,27 @@ services:
     volumes:
       - ./server:/Learning_platform/server
     environment:
-      CODE_DB_HOST: mysql_db
-      CODE_DB_USER: CODE_USER
-      CODE_DB_PASSWORD: CODE_PASSWORD
-      CODE_DB_NAME: CODE_DB
+      MOVIE_DB_HOST: mysql_db
+      MOVIE_DB_USER: CODE_USER
+      MOVIE_DB_PASSWORD: CODE_PASSWORD
+      MOVIE_DB_NAME: CODE_DB
       PYTHONPATH: /Learning_platform
     depends_on:
       - mysql
+
+  client:
+      build:
+        context: .
+        dockerfile: client/vite.dockerfile
+      ports:
+        - "3000:3000"
+      volumes:
+        - ./client:/Learning_platform/client
+        - /Learning_platform/client/node_modules
+      environment:
+        - CHOKIDAR_USEPOLLING=true
+      stdin_open: true
+      tty: true
 
   mysql:
     image: mysql:8.0
