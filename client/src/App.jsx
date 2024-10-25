@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import NotFound from './components/NotFound';
 import Example from './components/CatalogCard';
 import Tasks from './scenes/Tasks';
+import DraggableSplit from './components/DraggableSplit';
 
 function Test({ setTitle }) {
   useEffect(() => setTitle('This is a test!'), []);
@@ -19,7 +20,7 @@ function RoutesWithNav() {
   return <NavBar title={title}>
     <Routes>
       <Route path="/test" element={<Test setTitle={setTitle} />} />
-      <Route path="/catalog" element={<Example setTitle={setTitle} />} />
+      <Route path="/catalogs" element={<Example setTitle={setTitle} />} />
       <Route path="/catalogs/:id/tasks" element={<Tasks setTitle={setTitle} />} />
       <Route path="/*" element={<NotFound setTitle={setTitle} />} />
     </Routes>
@@ -32,6 +33,7 @@ function App() {
   return (
     <Router>
       <Routes>
+        <Route path="/split" element={<DraggableSplit />} />
         <Route path="/login" element={<LogIn />} />
         <Route path="/register" element={<Register />} />
         <Route path="*" element={<RoutesWithNav />} />

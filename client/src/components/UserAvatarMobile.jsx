@@ -1,8 +1,8 @@
 import { Disclosure } from '@headlessui/react';
 import { BellIcon } from '@heroicons/react/24/outline';
 
-export default function UserAvatarMobile({user, userNavigation}) {
-    return <div className="border-t border-gray-700 pt-4 pb-3">
+export default function UserAvatarMobile({ user, userNavigation }) {
+  return <div className="border-t border-gray-700 pt-4 pb-3">
     <div className="flex items-center px-5">
       <div className="flex-shrink-0">
         <img className="h-10 w-10 rounded-full" src={user.imageUrl} alt="" />

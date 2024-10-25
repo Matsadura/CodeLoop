@@ -1,0 +1,102 @@
+.task__markdown h1 {
+    @apply text-xl py-2 my-6 font-bold text-white border-b border-gray-300
+}
+
+.task__markdown h2 {
+    @apply text-xl py-2 my-6 font-bold text-white border-b border-gray-400
+}
+
+.task__markdown h3 {
+    @apply text-lg my-6 py-2 font-bold text-white border-b border-gray-500
+}
+
+.task__markdown h4,
+.task__markdown h5,
+.task__markdown h6 {
+    @apply text-lg py-2 my-6 text-white font-semibold border-b border-gray-500
+}
+
+.task__markdown ul, ol {
+    @apply pl-2
+}
+
+
+.task__markdown ul li {
+    @apply pl-4 pb-1
+}
+
+.task__markdown ol li {
+    @apply ml-8 pb-1
+}
+
+.task__markdown ol li p,
+.task__markdown ul li p {
+    @apply m-0 inline
+}
+
+li::marker {
+    @apply text-crimson-200
+}
+
+.task__markdown ul li {
+    list-style: inside;
+}
+
+.task__markdown ol li {
+    list-style: decimal;
+}
+
+.task__markdown p {
+    @apply text-gray-200 my-4
+}
+
+.task__markdown a {
+    @apply border-b border-b-crimson-200 font-bold hover:text-crimson-200
+}
+
+
+.task__markdown img {
+    @apply my-4 rounded-lg bg-violet-100 overflow-hidden border max-w-3xl w-full border-gray-300 border-opacity-55
+}
+
+.task__markdown svg {
+    @apply m-2
+}
+
+.task__markdown code {
+    @apply my-4 font-thin text-[13px] py-[2px] px-[4px] bg-gray-600 overflow-hidden border border-crimson-100 border-opacity-70 text-white
+}
+
+.task__markdown pre {
+    @apply border border-crimson-100 bg-gray-600 text-white rounded-md p-2 my-4 text-sm overflow-auto
+}
+
+.task__markdown pre code {
+    @apply border-none text-white font-normal bg-transparent rounded-sm p-0 my-4 text-sm
+}
+
+.task__markdown hr {
+    @apply my-16 border-white border border-dashed mx-[25%]
+}
+
+.task__markdown blockquote {
+    @apply bg-violet-400 pl-3 mr-1 py-1 border-l-[3px] border-l-blue-400 border border-blue-500 border-opacity-50 relative mt-4
+}
+
+.task__markdown blockquote p {
+    @apply text-blue-100
+}
+
+.task__markdown em {
+    @apply text-white
+}
+
+
+.task__markdown blockquote::after {
+    content: '\275E';
+    @apply absolute top-0 right-0 p-2 text-xl bg-blue-500 bg-opacity-20 h-6 text-blue-400 flex items-center justify-center
+}
+
+.task__markdown:first-child {
+    margin-top: 4px;
+}
