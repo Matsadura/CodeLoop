@@ -15,9 +15,9 @@ const user = {
 }
 const navigation = [
   { name: 'Dashboard', href: '#', current: true },
-  { name: 'Tasks', href: '#', current: false },
-  { name: 'Leaderboard', href: '#', current: false },
-  { name: 'Catalog', href: '/catalog', current: false },
+  { name: 'Tasks', href: '/catalogs/1/tasks', current: false },
+  { name: 'splitedUI', href: '/split', current: false },
+  { name: 'Catalog', href: '/catalogs', current: false },
 ]
 const userNavigation = [
   { name: 'Your Profile', href: '#' },
@@ -25,7 +25,7 @@ const userNavigation = [
   { name: 'Sign out', href: '#' },
 ]
 
-export default function NavBar({children, title}) {
+export default function NavBar({ children, title }) {
   return (
     <>
       <div className="min-h-full">
@@ -36,7 +36,7 @@ export default function NavBar({children, title}) {
                 <div className="flex h-16 items-center justify-between">
                   <div className="flex items-center">
                     <a className="flex-shrink-0" href="/">
-                      <FaCode className='text-crimson-200 h-8 w-8 text-4xl'/>
+                      <FaCode className='text-crimson-200 h-8 w-8 text-4xl' />
                     </a>
                     {/* big screen */}
                     <NavigationWideScreen navigation={navigation} />
@@ -52,7 +52,7 @@ export default function NavBar({children, title}) {
                       </button>
 
                       {/* Profile dropdown */}
-                      <UserAvatarWideScreen userNavigation={userNavigation} user={user}/>
+                      <UserAvatarWideScreen userNavigation={userNavigation} user={user} />
                     </div>
                   </div>
                   <div className="-mr-2 flex md:hidden">
