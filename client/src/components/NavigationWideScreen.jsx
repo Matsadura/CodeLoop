@@ -1,9 +1,9 @@
 function classNames(...classes) {
-    return classes.filter(Boolean).join(' ')
+  return classes.filter(Boolean).join(' ');
 }
-  
-export default function NavigationWideScreen({navigation}) {
-    return <div className="hidden md:block">
+
+export default function NavigationWideScreen({ navigation }) {
+  return <div className="hidden md:block">
     <div className="ml-10 flex items-baseline space-x-4">
       {navigation.map((item) => (
         <a
