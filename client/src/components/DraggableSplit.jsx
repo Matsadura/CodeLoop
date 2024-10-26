@@ -1,4 +1,5 @@
-import TaskMardDown from "./TaskMarkDown"
+import TaskMardDown from "./TaskMarkDown";
+import Editor from '@monaco-editor/react';
 
 
 export default function DraggableSplit(leftSide, rightSide) {
@@ -10,7 +11,9 @@ export default function DraggableSplit(leftSide, rightSide) {
 			<div className="md:col-span-5 col-span-12">
 				<TaskMardDown />
 			</div>
-			<div className="md:col-span-7 col-span-12 border-l border-l-white"></div>
-		</div >
+			<div className="md:col-span-7 col-span-12 border-l border-l-white">
+				<Editor height="90vh" defaultLanguage="javascript" defaultValue="// some comment" />;
+			</div>
+		</div>
 	</div>
 }
