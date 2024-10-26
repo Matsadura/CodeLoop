@@ -7,6 +7,7 @@ import NotFound from './components/NotFound';
 import Example from './components/CatalogCard';
 import Tasks from './scenes/Tasks';
 import DevSpace from './scenes/DevSpace';
+import { Dragger } from './components/responsiveCodeWithTask';
 
 function Test({ setTitle }) {
   useEffect(() => setTitle('This is a test!'), [setTitle]);
