@@ -1,7 +1,7 @@
 /* This example requires Tailwind CSS v2.0+ */
 import { Disclosure } from '@headlessui/react';
 import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { FaCode } from "react-icons/fa6";
+import { FaCode } from 'react-icons/fa6';
 import UserAvatarWideScreen from './UserAvatarWideScreen';
 import UserAvatarMobile from './UserAvatarMobile';
 import NavigationWideScreen from './NavigationWideScreen';
@@ -16,7 +16,7 @@ const user = {
 const navigation = [
   { name: 'Dashboard', href: '#', current: true },
   { name: 'Tasks', href: '/catalogs/1/tasks', current: false },
-  { name: 'splitedUI', href: '/split', current: false },
+  { name: 'Dev-Space', href: '/catalogs/1/tasks/1', current: false },
   { name: 'Catalog', href: '/catalogs', current: false },
 ]
 const userNavigation = [
