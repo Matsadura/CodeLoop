@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import NavBar from './components/NavBar';
 import { useState } from 'react';
 import NotFound from './components/NotFound';
-import Example from './components/CatalogCard';
+import CatalogCards from './components/CatalogCard';
 import Tasks from './scenes/Tasks';
 import DevSpace from './scenes/DevSpace';
 
@@ -14,7 +14,7 @@ function RoutesWithNav() {
 
   return <NavBar title={title}>
     <Routes>
-      <Route path="/catalogs" element={<Example setTitle={setTitle} />} />
+      <Route path="/catalogs" element={<CatalogCards setTitle={setTitle} />} />
       <Route path="/catalogs/:id/tasks" element={<Tasks setTitle={setTitle} />} />
       <Route path="/catalogs/:id/tasks/:id" element={<DevSpace setTitle={setTitle} />} />
       <Route path="/*" element={<NotFound setTitle={setTitle} />} />

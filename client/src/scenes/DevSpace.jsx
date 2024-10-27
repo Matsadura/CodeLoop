@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react';
 import CodeEditorLoader from '../components/CodeEditorWaiting';
 
 
-
 const Photon = {
   'editorGroup.dropBackground': '#44475A',
   'editorGroupHeader.tabsBackground': '#171520',
@@ -22,12 +21,6 @@ const Photon = {
   'editorSuggestWidget.selectedBackground': '#2f2f47',
 }
 
-const userTaskMetadata = {
-  taskId: 1,
-  taskTitle: 'Testing is everything',
-  taskBody: '## Just a test',
-  userLastSubmition: '#include <stdio.h>\n\nint main(void)\n{\n\tprintf("Hello there :)");\n}\n'
-}
 
 /**
  * Main development space component with split view for code and tasks

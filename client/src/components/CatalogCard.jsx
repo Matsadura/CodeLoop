@@ -1,7 +1,6 @@
 
-import { MdArrowRightAlt } from "react-icons/md";
-import { TiArrowRight } from "react-icons/ti";
-import { FaTasks } from "react-icons/fa";
+import { TiArrowRight } from 'react-icons/ti';
+import { FaTasks } from 'react-icons/fa';
 
 
 const catalogs = [
@@ -71,7 +70,7 @@ const catalogs = [
 
 ]
 
-export default function Example() {
+export default function CatalogCards() {
   return (
     <ul role="list" className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {catalogs.map((catalog) => (
@@ -111,7 +110,7 @@ export default function Example() {
               </div>
               <div className="flex w-0 flex-1">
                 <a
-                  href={`catalogs/id`}
+                  href={'catalogs/id'}
                   className="relative mr-4 inline-flex w-0 flex-1 items-center font-bold justify-end rounded-bl-lg border border-transparent py-4 text-sm text-crimson-200 hover:text-crimson-100"
                 >
                   <span className="ml-3 text-sm">START</span>
