@@ -9,6 +9,7 @@ services:
       - "5000:5000"
     volumes:
       - ./server:/Learning_platform/server
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       CODE_DB_HOST: mysql_db
       CODE_DB_USER: CODE_USER

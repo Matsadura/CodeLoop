@@ -11,7 +11,10 @@ class Solution_Result(BaseModel, Base):
                            ForeignKey('submissions.id', ondelete='CASCADE'),
                            nullable=False)
     task_test_case_id = Column(String(128), nullable=False)
-    output = Column(Enum('pass', 'fail', 'error'), nullable=False)
+    status = Column(Enum('pass', 'fail', 'error'), nullable=False)
+    stdout = Column(String(128), nullable=True)
+    stderr = Column(String(128), nullable=True)
+    time = Column(String(128), nullable=True)
     submission = relationship("Submission", back_populates="solution_results",)
 
 
