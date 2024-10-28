@@ -9,6 +9,7 @@ services:
       - "5000:5000"
     volumes:
       - ./server:/Learning_platform/server
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       CODE_DB_HOST: mysql_db
       CODE_DB_USER: CODE_USER
@@ -17,7 +18,6 @@ services:
       PYTHONPATH: /Learning_platform
     depends_on:
       - mysql
-      - code-executor
 
   client:
       build:
@@ -46,19 +46,6 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-    
-  code-executor:
-    image: python:3.8-slim
-    container_name: code_executor
-    volumes:
-      - ./executor:/executor
-    working_dir: /executor
-    entrypoint: ["tail", "-f", "/dev/null"]
-    security_opt:
-      - no-new-privileges:true
-    read_only: true
-    tmpfs:
-      - /tmp
 
 volumes:
   mysql_data:
