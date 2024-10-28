@@ -116,7 +116,7 @@ def test_submission(submission, code):
                 break
             else:
                 submission.status = 'correct'
-            storage.save()
+        storage.save()
 
 
 @app_views.route('/tasks/<task_id>/submit', methods=['POST'])
