@@ -28,7 +28,7 @@ const Photon = {
  * @param {Function} props.setTitle - Function to set the page title
  * @returns {React.ReactElement} DevSpace component
  */
-export default function DevSpace({ setTitle }) {
+export default function DevSpace({ setNav }) {
   const monaco = useMonaco();
   const [snippet, setSnippet] = useState('#include <stdio.h>\n\nint main(void)\n{\n\tprintf("Hello there :)");\n}\n');
   const [editorMouting, setEditorMounting] = useState(true);
@@ -47,8 +47,8 @@ export default function DevSpace({ setTitle }) {
   }, [monaco]);
 
   useEffect(() => {
-    if (setTitle) setTitle('0x14. MySQL')
-  }, [setTitle]);
+    if (setNav) setNav();
+  }, []);
 
   function logSnippet(code) {
     setSnippet(code)
