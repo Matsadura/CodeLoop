@@ -1,64 +1,12 @@
 
-import { MdArrowRightAlt } from "react-icons/md";
-import { TiArrowRight } from "react-icons/ti";
-import { FaTasks } from "react-icons/fa";
+import { request } from '../tools/requestModule';
+import { TiArrowRight } from 'react-icons/ti';
+import { useEffect, useState } from 'react';
+import { FaTasks } from 'react-icons/fa';
+
 
 
 const catalogs = [
-  {
-    id: 5,
-    title: 'Learn about parsing shell commands, executing programs and more',
-    description: 'Learn about parsing shell commands, executing programs and more',
-    tasksCount: 61,
-    difficulty: 'Hard',
-    imageUrl:
-      'https://www.britefish.net/wp-content/uploads/2019/07/logo-c-1.png',
-  },
-  {
-    id: 5,
-    title: 'Learn about parsing shell commands, executing programs and more',
-    description: 'Learn about parsing shell commands, executing programs and more',
-    tasksCount: 61,
-    difficulty: 'Hard',
-    imageUrl:
-      'https://www.britefish.net/wp-content/uploads/2019/07/logo-c-1.png',
-  },
-  {
-    id: 5,
-    title: 'Learn about parsing shell commands, executing programs and more',
-    description: 'Learn about parsing shell commands, executing programs and more',
-    tasksCount: 61,
-    difficulty: 'Hard',
-    imageUrl:
-      'https://www.britefish.net/wp-content/uploads/2019/07/logo-c-1.png',
-  },
-  {
-    id: 5,
-    title: 'Learn about parsing shell commands, executing programs and more',
-    description: 'Learn about parsing shell commands, executing programs and more',
-    tasksCount: 61,
-    difficulty: 'Hard',
-    imageUrl:
-      'https://www.britefish.net/wp-content/uploads/2019/07/logo-c-1.png',
-  },
-  {
-    id: 5,
-    title: 'Learn about parsing shell commands, executing programs and more',
-    description: 'Learn about parsing shell commands, executing programs and more',
-    tasksCount: 61,
-    difficulty: 'Hard',
-    imageUrl:
-      'https://www.britefish.net/wp-content/uploads/2019/07/logo-c-1.png',
-  },
-  {
-    id: 5,
-    title: 'Learn about parsing shell commands, executing programs and more',
-    description: 'Learn about parsing shell commands, executing programs and more',
-    tasksCount: 61,
-    difficulty: 'Hard',
-    imageUrl:
-      'https://www.britefish.net/wp-content/uploads/2019/07/logo-c-1.png',
-  },
   {
     id: 5,
     title: 'Write your Libft',
@@ -67,11 +15,33 @@ const catalogs = [
     difficulty: 'HARD',
     imageUrl:
       'https://www.britefish.net/wp-content/uploads/2019/07/logo-c-1.png',
-  },
-
+  }
 ]
 
-export default function Example() {
+export default function CatalogCards({ setNav }) {
+  const [catalogs, setCatalogs] = useState([]);
+  useEffect(() => { setNav() }, []);
+
+  useEffect(() => {
+    const request_header = {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({}),
+    };
+    getCatalogs();
+  }, []);
+
+  function getCatalogs() {
+    const request_header = {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    };
+    request('/categories', request_header).then((res) => {
+      setCatalogs(res.data);
+    });
+  }
+
+
   return (
     <ul role="list" className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {catalogs.map((catalog) => (
@@ -111,7 +81,7 @@ export default function Example() {
               </div>
               <div className="flex w-0 flex-1">
                 <a
-                  href={`catalogs/id`}
+                  href={'catalogs/id'}
                   className="relative mr-4 inline-flex w-0 flex-1 items-center font-bold justify-end rounded-bl-lg border border-transparent py-4 text-sm text-crimson-200 hover:text-crimson-100"
                 >
                   <span className="ml-3 text-sm">START</span>

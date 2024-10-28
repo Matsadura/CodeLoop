@@ -1,31 +1,37 @@
-/* This example requires Tailwind CSS v2.0+ */
-import { Disclosure } from '@headlessui/react';
 import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { FaCode } from 'react-icons/fa6';
 import UserAvatarWideScreen from './UserAvatarWideScreen';
-import UserAvatarMobile from './UserAvatarMobile';
 import NavigationWideScreen from './NavigationWideScreen';
+import PrimaryBtnOutline from './PrimaryBtnOutline';
+import UserAvatarMobile from './UserAvatarMobile';
 import NavigationMobile from './NavigationMobile';
+import { Disclosure } from '@headlessui/react';
+import { FaCode } from 'react-icons/fa6';
+import { DataContext } from "./Context";
+import PrimaryBtn from './PrimaryBtn';
+import { useContext } from 'react';
 
-const user = {
-  name: 'Tom Cook',
-  email: 'tom@example.com',
-  imageUrl:
-    'https://i.pinimg.com/originals/ed/1b/58/ed1b58e5741ea17739e673a6d30182df.jpg',
-}
-const navigation = [
-  { name: 'Dashboard', href: '#', current: true },
-  { name: 'Tasks', href: '/catalogs/1/tasks', current: false },
-  { name: 'Dev-Space', href: '/catalogs/1/tasks/1', current: false },
-  { name: 'Catalog', href: '/catalogs', current: false },
-]
+// const user = {
+//   name: 'Tom Cook',
+//   email: 'tom@example.com',
+//   imageUrl:
+//     'https://i.pinimg.com/originals/ed/1b/58/ed1b58e5741ea17739e673a6d30182df.jpg',
+// }
+// const navigation = [
+//   { id: 1, name: 'Dashboard', href: '#', current: true },
+//   { id: 2, name: 'Tasks', href: '/catalogs/1/tasks', current: false },
+//   { id: 3, name: 'Dev-Space', href: '/catalogs/1/tasks/1', current: false },
+//   { id: 4, name: 'Catalog', href: '/catalogs', current: false },
+// ]
 const userNavigation = [
   { name: 'Your Profile', href: '#' },
   { name: 'Settings', href: '#' },
   { name: 'Sign out', href: '#' },
 ]
 
-export default function NavBar({ children, title }) {
+export default function NavBar({ children, title, navigation }) {
+  const { user, isAuthenticated } = useContext(DataContext);
+
+
   return (
     <>
       <div className="min-h-full">
@@ -43,16 +49,15 @@ export default function NavBar({ children, title }) {
                   </div>
                   <div className="hidden md:block">
                     <div className="ml-4 flex items-center md:ml-6">
-                      <button
-                        type="button"
-                        className="rounded-full bg-gray-800 p-1 text-gray-400 hover:text-crimson-200 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
-                      >
-                        <span className="sr-only">View notifications</span>
-                        <BellIcon className="h-6 w-6" aria-hidden="true" />
-                      </button>
 
                       {/* Profile dropdown */}
-                      <UserAvatarWideScreen userNavigation={userNavigation} user={user} />
+                      {isAuthenticated ?
+                        <UserAvatarWideScreen userNavigation={userNavigation} user={user} />
+                        : <div className='flex items-center gap-3'>
+                          <PrimaryBtnOutline label="Login" action={() => navigate('/login')} />
+                          <PrimaryBtn label="Register" action={() => navigate('/register')} />
+                        </div>
+                      }
                     </div>
                   </div>
                   <div className="-mr-2 flex md:hidden">
