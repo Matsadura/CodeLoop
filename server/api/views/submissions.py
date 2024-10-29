@@ -99,6 +99,7 @@ def test_submission(submission, code):
                 solution_result_data = {
                     'submission_id': submission.id,
                     'task_test_case_id': test['test_case_id'],
+                    'stdin':  test['stdin'],
                     'status': status,
                     'stdout': result_data['stdout'],
                     'stderr': result_data['stderr'],
@@ -111,7 +112,7 @@ def test_submission(submission, code):
                 break
 
         for value in submission_result.values():
-            if value['status'] == 'fail':
+            if value['status'] == 'fail' or value['status'] == 'error':
                 submission.status = 'incorrect'
                 break
             else:
@@ -169,10 +170,11 @@ def get_submissions(task_id):
     if not task:
         return jsonify({'error': 'Task not found'}), 404
     submissions = storage.all_list_specific(Submission, 'task_id', task_id)
+    my_submissions = []
     for submission in submissions:
-        if submission.user_id != current_user:
-            return jsonify({'error': 'Unauthorized'}), 401
-    return jsonify([submission.to_dict() for submission in submissions])
+        if submission.user_id == current_user:
+            my_submissions.append(submission)
+    return jsonify([submission.to_dict() for submission in my_submissions])
 
 
 @app_views.route('/submissions/<submission_id>', methods=['GET'])

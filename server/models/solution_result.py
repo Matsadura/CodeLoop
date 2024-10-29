@@ -1,6 +1,6 @@
 """Holds the Solution_Result class"""
 from models.base_model import BaseModel, Base
-from sqlalchemy import Column, String, Enum, ForeignKey
+from sqlalchemy import Column, String, Enum, ForeignKey, TEXT
 from sqlalchemy.orm import relationship
 
 
@@ -14,6 +14,7 @@ class Solution_Result(BaseModel, Base):
     status = Column(Enum('pass', 'fail', 'error'), nullable=False)
     stdout = Column(String(128), nullable=True)
     stderr = Column(String(128), nullable=True)
+    stdin = Column(String(4096),  nullable=True)
     time = Column(String(128), nullable=True)
     submission = relationship("Submission", back_populates="solution_results",)
 
