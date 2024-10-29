@@ -1,24 +1,33 @@
+import { request } from '../tools/requestModule';
+import { useState, useEffect } from 'react';
 import Markdown from 'react-markdown';
 import './styles/TaskMarkDown.css';
-import { useEffect, useState } from 'react';
 
-
-export default function TaskMardDown(title) {
-  const [Task, setTask] = useState('');
+export default function TaskMardDown({ taskId }) {
+  const [taskTitle, setTaskTitle] = useState('');
+  const [taskBody, setTaskBody] = useState('');
 
   useEffect(() => {
-    fetch('https://raw.githubusercontent.com/ila36IX/Notes/refs/heads/main/Python/SQLAlchemy/SQLAlchemy.md')
-      .then(r => r.blob())
-      .then(blob => blob.text())
-      .then(text => setTask(text))
-  }, [])
+    getTaskData(taskId);
+  }, []);
+
+  function getTaskData(catalog_id) {
+    const request_header = {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    };
+    request(`/tasks/${taskId}`, request_header).then((res) => {
+      setTaskTitle(res.data.title);
+      setTaskBody(res.data.description);
+    });
+  }
 
   return <div>
     <header>
-      <h1 className='bg-violet-500 text-wrap border-b px-4 py-6 text-2xl text-gray-50 font-bold'>Hello world!</h1>
+      <h1 className='bg-violet-500 text-wrap border-b px-4 py-6 text-2xl text-gray-50 font-bold'>{taskTitle}</h1>
     </header>
     <main className='task__markdown text-gray-200 p-4'>
-      <Markdown>{Task}</Markdown>
+      <Markdown>{taskBody}</Markdown>
     </main>
   </div>
 }

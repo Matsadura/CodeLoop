@@ -7,6 +7,9 @@ import { IoPlay } from 'react-icons/io5';
 import { GrCloudUpload } from 'react-icons/gr';
 import { GrTest } from 'react-icons/gr';
 import { TestsDragger, RunDragger } from './TestsDragger';
+import { request } from '../tools/requestModule';
+import { useParams } from 'react-router-dom';
+import { TbRotateClockwise } from "react-icons/tb";
 
 /**
  * Renders a full-width coding space with expandable task and code panels
@@ -16,11 +19,14 @@ import { TestsDragger, RunDragger } from './TestsDragger';
  * @param {React.ReactNode} props.taskView - Task markdown viewer component
  * @returns {React.ReactElement} Desktop split view component
  */
-function CodingSpaceWide({ codeEditor, taskView }) {
+function CodingSpaceWide({ codeEditor, taskView, submitAction, snippet }) {
 	const [expandTaskContainer, setExpandTaskContainer] = useState(false);
 	const [expandCodeContainer, setExpandCodeContainer] = useState(false);
 	const [showTests, setShowTests] = useState(false);
 	const [showOutput, setShowOutput] = useState(false);
+	const [showSubmitPanding, setSubmitPanding] = useState(false);
+
+	const { taskId } = useParams();
 
 	function toggleTask() {
 		if (expandTaskContainer) {
@@ -42,6 +48,25 @@ function CodingSpaceWide({ codeEditor, taskView }) {
 		}
 	}
 
+	function SubmitCode() {
+		if (showSubmitPanding)
+			return;
+		const request_header = {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				code: snippet,
+				language: "python"
+			})
+		};
+		console.log(request_header)
+		setSubmitPanding(true);
+		request(`/tasks/${taskId}/submit`, request_header).then((res) => {
+			setSubmitPanding(false);
+			setShowTests(true);
+		});
+	}
+
 	return <div className="p-4 bg-violet-600 h-screen relative">
 		<TestsDragger open={showTests} setOpen={setShowTests} />
 		<RunDragger open={showOutput} setOpen={setShowOutput} />
@@ -52,9 +77,13 @@ function CodingSpaceWide({ codeEditor, taskView }) {
 					<button className="text-lg text-crimson-100 hover:text-crimson-200  flex items-center gap-1" onClick={toggleTask}>{expandTaskContainer ? <RiFullscreenExitLine /> : <RiFullscreenFill />} Task</button>
 				</div>
 				<div className='flex items-center gap-3'>
-					<button className="text-sm border hover:border-transparent border-crimson-200  rounded-lg text-crimson-200 flex items-center gap-1 px-2 py-1" onClick={() => setShowOutput(!showOutput)}><IoPlay /> Run</button>
+					{/* <button className="text-sm border hover:border-transparent border-crimson-200  rounded-lg text-crimson-200 flex items-center gap-1 px-2 py-1" onClick={() => setShowOutput(!showOutput)}><IoPlay /> Run</button> */}
 					<button className="text-sm border hover:border-transparent border-crimson-200  rounded-lg text-crimson-200 flex items-center gap-1 px-2 py-1" onClick={() => setShowTests(!showTests)}><GrTest />Output & Tests</button>
-					<button className="text-sm text-gray-50 flex rounded-lg items-center gap-1 bg-crimson-100 hover:bg-crimson-200 px-2 py-1"><GrCloudUpload /> Submit</button>
+					<button className={`text-sm text-gray-50 flex rounded-lg ${showSubmitPanding && 'cursor-not-allowed'} items-center gap-1 bg-crimson-100 hover:bg-crimson-200 px-2 py-1`} onClick={SubmitCode}>
+						{showSubmitPanding ? <TbRotateClockwise className='animate-spin' /> : <GrCloudUpload />}  Submit
+
+					</button>
+
 				</div>
 				<div className='flex items-center'>
 					<button className="text-lg text-crimson-100 hover:text-crimson-200 flex items-center gap-1" onClick={toggleCode}>{expandCodeContainer ? <RiFullscreenExitLine /> : <RiFullscreenFill />} Editor</button>
@@ -116,7 +145,7 @@ function CodingSpaceMobile({ codeEditor, taskView }) {
  * @param {React.ReactNode} props.taskView - Task markdown viewer component
  * @returns {React.ReactElement} Responsive component
  */
-export default function ResponsiveCodeWithTask({ codeEditor, taskView }) {
+export default function ResponsiveCodeWithTask({ codeEditor, taskView, submitAction, snippet }) {
 	const [width, setWidth] = useState(window.innerWidth);
 
 	function handleWindowSizeChange() {
@@ -131,6 +160,6 @@ export default function ResponsiveCodeWithTask({ codeEditor, taskView }) {
 
 	const isMobile = width <= 768;
 	return isMobile ?
-		<CodingSpaceMobile codeEditor={codeEditor} taskView={taskView} />
-		: <CodingSpaceWide codeEditor={codeEditor} taskView={taskView} />;
+		<CodingSpaceMobile codeEditor={codeEditor} taskView={taskView} submitAction={submitAction} snippet={snippet} />
+		: <CodingSpaceWide codeEditor={codeEditor} taskView={taskView} submitAction={submitAction} snippet={snippet} />;
 }

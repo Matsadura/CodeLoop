@@ -1,8 +1,10 @@
-import TaskMardDown from '../components/TaskMarkDown';
-import Editor, { useMonaco } from '@monaco-editor/react';
 import ResponsiveCodeWithTask from '../components/responsiveCodeWithTask';
-import { useEffect, useState } from 'react';
 import CodeEditorLoader from '../components/CodeEditorWaiting';
+import Editor, { useMonaco } from '@monaco-editor/react';
+import TaskMardDown from '../components/TaskMarkDown';
+import { request } from '../tools/requestModule';
+import { useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 
 
 const Photon = {
@@ -28,11 +30,12 @@ const Photon = {
  * @param {Function} props.setTitle - Function to set the page title
  * @returns {React.ReactElement} DevSpace component
  */
-export default function DevSpace({ setNav }) {
+export default function DevSpace({ setTitle }) {
   const monaco = useMonaco();
-  const [snippet, setSnippet] = useState('#include <stdio.h>\n\nint main(void)\n{\n\tprintf("Hello there :)");\n}\n');
+  const [snippet, setSnippet] = useState('import sys\n\ndef solution(input):\n    # Your solution code TESTING\n    data = eval(input)\n    output = 0\n    for i in data:\n        output += i\n    return output\n\n\nif __name__ == \"__main__\":\n    input_data = sys.stdin.read()\n    result = solution(input_data)\n    print(result)\n');
   const [editorMouting, setEditorMounting] = useState(true);
-
+  const [lastSubbmitId, setLastSubmitId] = useState('');
+  const { taskId } = useParams();
 
   useEffect(() => {
     if (monaco) {
@@ -47,22 +50,55 @@ export default function DevSpace({ setNav }) {
   }, [monaco]);
 
   useEffect(() => {
-    if (setNav) setNav();
+    if (setTitle) setTitle('Duck is you friend :)');
   }, []);
 
-  function logSnippet(code) {
-    setSnippet(code)
-    console.log(snippet);
+  useEffect(() => {
+    getLastSubmission();
+  }, []);
+
+  function getLastSubmission() {
+    const request_header = {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    };
+    request(`/tasks/${taskId}/submissions`, request_header).then((res) => {
+      if (res.data.length === 0)
+        setSnippet('def solution():\n\t# Your code goes here...');
+      else {
+        res.data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        setSnippet(res.data[0].code);
+        setLastSubmitId(res.data[0].id);
+      }
+    });
   }
 
+  function SubmitCode() {
+    const request_header = {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        code: snippet,
+        language: "python"
+      })
+    };
+    console.log(request_header)
+    request(`/tasks/${taskId}/submit`, request_header).then((res) => {
+      console.log(res);
+    });
+  }
+
+
   return <ResponsiveCodeWithTask
+    // submitAction={SubmitCode}
+    snippet={snippet}
     codeEditor={
       <div className="bg-transparent h-full">
         {editorMouting ? <CodeEditorLoader /> : null}
         <Editor
           value={snippet}
-          onChange={(code) => logSnippet(code)}
-          language='c'
+          onChange={(code) => setSnippet(code)}
+          language='python'
           theme={'photon'}
           automaticLayout={false}
           minimap={{ enabled: false }}
@@ -91,6 +127,6 @@ export default function DevSpace({ setNav }) {
         />
       </div>
     }
-    taskView={<TaskMardDown />}
+    taskView={<TaskMardDown taskId={taskId} />}
   />
 }

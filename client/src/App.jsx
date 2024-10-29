@@ -1,21 +1,27 @@
-import LogIn from './scenes/LogIn';
-import Register from './scenes/Register';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import NavBar from './components/NavBar';
-import { useState } from 'react';
-import NotFound from './components/NotFound';
-import CatalogCards from './components/CatalogCard';
-import Tasks from './scenes/Tasks';
-import DevSpace from './scenes/DevSpace';
-import { ContextProvider } from "./components/Context.jsx";
 import { PrivateRoute } from './components/PrivateRoute.jsx';
+import { ContextProvider } from "./components/Context.jsx";
+import CatalogCards from './components/CatalogCard';
+import NotFound from './components/NotFound';
+import CreateNewTask from './scenes/CreateNewTask.jsx';
+import DevSpace from './scenes/DevSpace';
+import Register from './scenes/Register';
+import NavBar from './components/NavBar';
+import Tasks from './scenes/Tasks';
+import LogIn from './scenes/LogIn';
+import { useState } from 'react';
+
+
 
 const navigation = [
   { id: 1, name: 'Home', title: 'Home', href: '/', current: false },
-  { id: 2, name: 'Tasks', title: 'Tasks', href: '/catalogs/1/tasks', current: false },
-  { id: 3, name: 'Dev-Space', title: 'Where the magic happens', href: '/catalogs/1/tasks/1', current: false },
-  { id: 4, name: 'Catalog', title: 'Tasks', href: '/catalogs', current: false },
+  { id: 2, name: 'Tasks', title: 'Index of tasks', href: '/tasks', current: false },
+  // { id: 3, name: 'Dev-Space', title: 'Where the magic happens', href: '/catalogs/1/tasks/1', current: false },
+  { id: 4, name: 'Catalog', title: 'Here is our catalogs', href: '/catalogs', current: false },
+  { id: 5, name: 'Create task', title: 'Create new task', href: '/task/create', current: false },
 ]
+
+
 
 function RoutesWithNav() {
   const [title, setTitle] = useState('');
@@ -33,7 +39,7 @@ function RoutesWithNav() {
       } else item.current = false;
     }
     setNav(newNav);
-    console.log(newNav)
+    console.log(nav);
   }
 
 
@@ -44,12 +50,24 @@ function RoutesWithNav() {
           path='/catalogs'
           element={<CatalogCards setNav={() => setCurrPage(4)} />}
         />
-        <Route path='/catalogs/:id/tasks' element={<Tasks setNav={() => setCurrPage(2)} />} />
         <Route
-          path="/catalogs/:id/tasks/:id"
+          path='/tasks'
+          element={<Tasks setNav={() => setCurrPage(2)} />}
+        />
+        <Route path='/catalogs/:id_catalog/tasks' element={<Tasks setNav={() => setCurrPage(2)} />} />
+        <Route
+          path="/tasks/:taskId"
           element={
             <PrivateRoute>
-              <DevSpace setNav={() => setCurrPage(3)} />
+              <DevSpace setTitle={setTitle} />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/task/create"
+          element={
+            <PrivateRoute>
+              <CreateNewTask setNav={() => setCurrPage(5)} />
             </PrivateRoute>
           }
         />
@@ -58,6 +76,8 @@ function RoutesWithNav() {
     </PrivateRoute>
   </NavBar>
 }
+
+
 
 function App() {
   return (

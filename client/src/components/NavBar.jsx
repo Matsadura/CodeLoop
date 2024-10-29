@@ -9,6 +9,7 @@ import { FaCode } from 'react-icons/fa6';
 import { DataContext } from "./Context";
 import PrimaryBtn from './PrimaryBtn';
 import { useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 // const user = {
 //   name: 'Tom Cook',
@@ -30,6 +31,7 @@ const userNavigation = [
 
 export default function NavBar({ children, title, navigation }) {
   const { user, isAuthenticated } = useContext(DataContext);
+  const navigate = useNavigate();
 
 
   return (

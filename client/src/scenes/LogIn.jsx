@@ -15,14 +15,13 @@ export default function LogIn() {
 
   function hondleSubmit(e) {
     e.preventDefault();
-    console.log(email, password)
     const request_header = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     };
+    console.log(request_header);
     request("/login", request_header).then((res) => {
-      console.log(res);
       if (res.status === 200) {
         localStorage.setItem("_token", res.data.token);
         navigate('/');

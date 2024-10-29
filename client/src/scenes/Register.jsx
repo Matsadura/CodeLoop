@@ -22,8 +22,7 @@ export default function Register() {
   const navigate = useNavigate();
 
   useNavigate('/login');
-  function hodnleSubmit(e) {
-    console.log(fname, lname, email, password, passwordConf)
+  function handleSubmit(e) {
     setformErr(null);
     e.preventDefault();
     if (password !== passwordConf) {
@@ -46,6 +45,7 @@ export default function Register() {
     };
     request("/register", requestHeader).then((res) => {
       if (res.status === 201) {
+        console.log(res);
         navigate('/login');
       } else {
         setformErr(res.data.error);
@@ -118,7 +118,7 @@ export default function Register() {
               </div>
               {formErr && <div className="bg-bluish-red bg-opacity-10 text-red-500 text-sm p-2 rounded-sm border border-red-600 hover:border-red-500">{formErr}</div>}
               <div>
-                <PrimaryBtn label="Register" action={hodnleSubmit} />
+                <PrimaryBtn label="Register" action={handleSubmit} />
               </div>
             </form>
           </div>
