@@ -13,6 +13,7 @@ class Solution_Result(BaseModel, Base):
     task_test_case_id = Column(String(128), nullable=False)
     status = Column(Enum('pass', 'fail', 'error'), nullable=False)
     stdout = Column(String(128), nullable=True)
+    expected_output = Column(String(128), nullable=True)
     stderr = Column(String(128), nullable=True)
     stdin = Column(String(4096),  nullable=True)
     time = Column(String(128), nullable=True)

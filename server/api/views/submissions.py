@@ -102,6 +102,7 @@ def test_submission(submission, code):
                     'stdin':  test['stdin'],
                     'status': status,
                     'stdout': result_data['stdout'],
+                    'expected_output':  test['expected_output'],
                     'stderr': result_data['stderr'],
                     'time': result_data['time'],
                 }
