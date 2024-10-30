@@ -88,7 +88,7 @@ export default function NavBar({ children, title, navigation }) {
             <h1 className="text-lg font-semibold leading-6 text-gray-100">{title}</h1>
           </div>
         </header>
-        <main>
+        <main className='bg-violet-500'>
           <div className="mx-auto p-4 max-w-7xl py-6 sm:px-6 lg:px-8">
             {children}
           </div>
