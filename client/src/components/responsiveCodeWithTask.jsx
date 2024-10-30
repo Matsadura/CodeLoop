@@ -90,7 +90,7 @@ function CodingSpaceWide({ codeEditor, taskView, submitAction, snippet }) {
 				</div>
 			</div>
 			{/* buttons */}
-			<div className={`${expandTaskContainer ? 'col-span-12' : 'col-span-5'} ${expandCodeContainer ? 'hidden' : null} col-span-12 h-full pb-24 overflow-auto`}>
+			<div className={`${expandTaskContainer ? 'col-span-12' : 'col-span-5'} ${expandCodeContainer ? 'hidden' : null} col-span-12 h-full min-h-screen pb-24 overflow-auto`}>
 				{taskView}
 			</div>
 			<div className={`py-2 bg-violet-500 ${expandTaskContainer ? 'hidden' : null} ${expandCodeContainer ? 'col-span-12' : 'col-span-7'} ${expandCodeContainer ? null : 'border-l'} border-l-white h-screen border-t-transparent`}>

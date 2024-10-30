@@ -34,7 +34,10 @@ export default function TestCase({ title, test }) {
         </DisclosureButton>
         <DisclosurePanel className="text-gray-400 mb-8 text-[11px] block w-full overflow-auto border py-4 px-2 border-gray-400 border-opacity-20">
           <CodeOutput output={test.stdout} codeState={test.status} />
-          {test.stderr ? <CodeOutput output={test.stderr} codeState={test.status} /> : null}
+          {test.stderr ? <div className='mt-2'>
+            <p className='text-red-200 mb-4'>Stderr</p>
+            <CodeOutput output={test.stderr} codeState={test.status} />
+          </div> : null}
         </DisclosurePanel>
       </Disclosure>
     </div>

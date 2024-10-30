@@ -19,12 +19,7 @@ export default function CodeOutput({ codeState, output }) {
 		</div>
 	} else {
 		return <div className='bg-blue-500 bg-opacity-10 text-blue-500 border border-blue-500 p-2 border-opacity-50 text-sm font-mono overflow-auto'>
-			<div>
-				Nothing to display yet
-			</div>
-			<div>
-				Hit the submit button when you&apos;re ready!
-			</div>
+			{output}
 		</div>
 	}
 }

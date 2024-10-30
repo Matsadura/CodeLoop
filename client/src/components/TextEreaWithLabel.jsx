@@ -1,3 +1,5 @@
+import { MdErrorOutline } from 'react-icons/md';
+
 /**
  * InputWithLabel - A reusable form input component with an associated label
  *
@@ -25,7 +27,7 @@ export default function TextEreaWithLabel({ label, type, identefier, required, e
 				required={required}
 				value={value}
 				onChange={(e) => setValue(e.target.value)}
-				className="block w-full font-mono appearance-none bg-violet-400 rounded-md border border-crimson-300 hover:border-crimson-100 px-3 py-2 shadow-sm text-white focus:border-crimson-200 focus:outline-none focus:ring-blue-300 sm:text-sm"
+				className="block w-full font-mono appearance-none bg-violet-400 rounded-md border border-crimson-300 text-blue-400 hover:border-crimson-100 px-3 py-2 shadow-sm text-white focus:border-crimson-200 focus:outline-none focus:ring-blue-300 sm:text-sm"
 			/>
 		</div>
 		{error ? <div className="text-bluish-red gap-1 mt-2 font-light flex flex-start items-center">
