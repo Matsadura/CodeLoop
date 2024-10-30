@@ -26,14 +26,17 @@ export default function TestCase({ title, test }) {
 
 
   return (
-    <div>
+    <div className='p-1'>
       <Disclosure>
-        <DisclosureButton className={`group flex justify-start text-start items-center gap-2 ${testStatus} my-4`}>
-          <pre>{test.stdin}</pre>
+        <DisclosureButton className={`group flex justify-start text-start items-center gap-2 ${testStatus} my-2`}>
+          <span className='text-gray-400 text-[12px]'>Case</span><pre>{test.stdin}</pre>
           <ChevronDownIcon className="w-5 group-data-[open]:rotate-180" />
         </DisclosureButton>
         <DisclosurePanel className="text-gray-400 mb-8 text-[11px] block w-full overflow-auto border py-4 px-2 border-gray-400 border-opacity-20">
+          <p className='text-red-200 mb-2'>Got</p>
           <CodeOutput output={test.stdout} codeState={test.status} />
+          <p className='text-red-200 mb-2 mt-6'>Expected Output</p>
+          <CodeOutput output={test.expected_output} codeState={test.status} />
           {test.stderr ? <div className='mt-2'>
             <p className='text-red-200 mb-4'>Stderr</p>
             <CodeOutput output={test.stderr} codeState={test.status} />

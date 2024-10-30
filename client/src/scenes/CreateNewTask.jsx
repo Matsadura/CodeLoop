@@ -148,7 +148,6 @@ export default function CreateNewTask({ setNav }) {
 				)).then(() => { navigate(`/tasks/${createdTaskId}`) })
 					.catch((error) => {
 						console.error("Error uploading tests:", error);
-						se
 					});
 			}
 		});

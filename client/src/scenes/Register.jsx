@@ -3,9 +3,11 @@ import { FaCode } from "react-icons/fa6";
 import InputWithLabel from "../components/InputWithLabel";
 import PrimaryBtn from "../components/PrimaryBtn";
 import LinkBold from "../components/LinkBold";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { request } from '../tools/requestModule';
 import { useNavigate } from 'react-router-dom';
+import { useContext } from "react";
+import { DataContext } from "../components/Context";
 
 
 export default function Register() {
@@ -20,6 +22,12 @@ export default function Register() {
   const [formErr, setformErr] = useState(null);
   // redirect
   const navigate = useNavigate();
+  const { isAuthenticated } = useContext(DataContext);
+
+  // redirect when already authenticated
+  useEffect(() => {
+    if (isAuthenticated) navigate('/profile');
+  }, []);
 
   useNavigate('/login');
   function handleSubmit(e) {
@@ -33,6 +41,11 @@ export default function Register() {
       setPasswordErr('');
       setPasswordConfErr('');
     }
+    if (!fname.length || !lname.length || !email.length || !password.length) {
+      setformErr('Please fill all the fields');
+      return;
+    }
+
     const requestHeader = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -44,12 +57,8 @@ export default function Register() {
       }),
     };
     request("/register", requestHeader).then((res) => {
-      if (res.status === 201) {
-        console.log(res);
-        navigate('/login');
-      } else {
-        setformErr(res.data.error);
-      }
+      if (res.status === 201) navigate('/login');
+      else setformErr(res.data.error);
     });
   }
 

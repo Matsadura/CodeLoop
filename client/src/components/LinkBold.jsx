@@ -12,7 +12,7 @@ import { useNavigate } from 'react-router-dom';
 export default function LinkBold({ label, location }) {
   const navigate = useNavigate();
 
-  return <button onClick={() => navigate(location || '#')}
+  return <button type='button' onClick={() => navigate(location || '#')}
     className="font-medium text-crimson-200 hover:text-crimson-100 focus:outline-none focus:ring-blue-100 focus:ring-1">
     {label}
   </button>

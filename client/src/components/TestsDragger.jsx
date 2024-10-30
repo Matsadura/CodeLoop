@@ -33,7 +33,6 @@ export function TestsDragger({ open, setOpen }) {
       headers: { "Content-Type": "application/json" },
     };
     request(`/tasks/${taskId}/submissions`, request_header).then((res) => {
-
       if (res.data.length === 0)
         console.log('empty tests');
       else {
@@ -64,36 +63,11 @@ export function TestsDragger({ open, setOpen }) {
       </div>
     }
   >
-    {/* <h4 className='text-base font-semibold leading-6 text-gray-50 mb-6 flex items-center gap-2'><FaTerminal />Execution Logs</h4>
-    <CodeOutput codeState={'fail'} /> */}
     <h4 className='text-base font-semibold leading-6 text-gray-50 mb-6 flex items-center gap-2'><GrTest />Test cases your code will need to pass</h4>
     {tests ? tests.map((test) => {
       return <TestCase key={test.id} test={test} />
     }) : <div className='text-white'>Please submit your first code...</div>}
 
-  </Dragger>
-}
-
-
-/**
- * Component for rendering a draggable user's panel contains code output
- *
- * @param {boolean} props.open - Indicates if the panel is open
- * @param {function} props.setOpen - Function to set the open state
- * @returns {JSX.Element} The draggable output panel component
- */
-export function RunDragger({ open, setOpen }) {
-  return <Dragger
-    open={open}
-    setOpen={setOpen}
-    title={
-      <div className='flex items-center gap-4'>
-        <FaTerminal className='text-3xl' />
-        Output
-      </div>
-    }
-  >
-    <CodeOutput codeState={'fail'} />
   </Dragger>
 }
 

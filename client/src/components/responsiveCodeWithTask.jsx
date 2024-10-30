@@ -3,13 +3,13 @@ import { RiFullscreenFill } from 'react-icons/ri';
 import { FaCode } from 'react-icons/fa6';
 import { BsCardText } from 'react-icons/bs';
 import { RiFullscreenExitLine } from 'react-icons/ri';
-import { IoPlay } from 'react-icons/io5';
 import { GrCloudUpload } from 'react-icons/gr';
 import { GrTest } from 'react-icons/gr';
-import { TestsDragger, RunDragger } from './TestsDragger';
+import { TestsDragger } from './TestsDragger';
 import { request } from '../tools/requestModule';
 import { useParams } from 'react-router-dom';
 import { TbRotateClockwise } from "react-icons/tb";
+import { IoHomeOutline } from "react-icons/io5";
 
 /**
  * Renders a full-width coding space with expandable task and code panels
@@ -22,9 +22,9 @@ import { TbRotateClockwise } from "react-icons/tb";
 function CodingSpaceWide({ codeEditor, taskView, submitAction, snippet }) {
 	const [expandTaskContainer, setExpandTaskContainer] = useState(false);
 	const [expandCodeContainer, setExpandCodeContainer] = useState(false);
-	const [showTests, setShowTests] = useState(false);
-	const [showOutput, setShowOutput] = useState(false);
 	const [showSubmitPanding, setSubmitPanding] = useState(false);
+	const [showTests, setShowTests] = useState(false);
+	const [taskStatus, setTaskStatus] = useState(null);
 
 	const { taskId } = useParams();
 
@@ -48,6 +48,25 @@ function CodingSpaceWide({ codeEditor, taskView, submitAction, snippet }) {
 		}
 	}
 
+	useEffect(() => getLastSubmission(), [showTests]);
+
+	// To show the code status
+	function getLastSubmission() {
+		const request_header = {
+			method: "GET",
+			headers: { "Content-Type": "application/json" },
+		};
+		request(`/tasks/${taskId}/submissions`, request_header).then((res) => {
+			if (res.data.length === 0)
+				console.log('empty tests');
+			else {
+				res.data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+				console.log(res.data[0]);
+				setTaskStatus(res.data[0].status)
+			}
+		});
+	}
+
 	function SubmitCode() {
 		if (showSubmitPanding)
 			return;
@@ -59,17 +78,18 @@ function CodingSpaceWide({ codeEditor, taskView, submitAction, snippet }) {
 				language: "python"
 			})
 		};
-		console.log(request_header)
 		setSubmitPanding(true);
 		request(`/tasks/${taskId}/submit`, request_header).then((res) => {
 			setSubmitPanding(false);
 			setShowTests(true);
-		});
+		}).catch((error) => {
+			console.error("Submission error:", error);
+			setSubmitPanding(false);
+		});;
 	}
 
 	return <div className="p-4 bg-violet-600 h-screen relative">
 		<TestsDragger open={showTests} setOpen={setShowTests} />
-		<RunDragger open={showOutput} setOpen={setShowOutput} />
 
 		<div className="grid grid-cols-12 rounded-md border-2 border-gray-300 border-opacity-30 overflow-hidden h-full">
 			<div className='bg-violet-500 border-b border-gray-300 border-opacity-70 col-span-12 h-12 flex w-full px-4 justify-between'>
@@ -77,12 +97,18 @@ function CodingSpaceWide({ codeEditor, taskView, submitAction, snippet }) {
 					<button className="text-lg text-crimson-100 hover:text-crimson-200  flex items-center gap-1" onClick={toggleTask}>{expandTaskContainer ? <RiFullscreenExitLine /> : <RiFullscreenFill />} Task</button>
 				</div>
 				<div className='flex items-center gap-3'>
-					{/* <button className="text-sm border hover:border-transparent border-crimson-200  rounded-lg text-crimson-200 flex items-center gap-1 px-2 py-1" onClick={() => setShowOutput(!showOutput)}><IoPlay /> Run</button> */}
+					<a className="text-sm border hover:border-transparent border-crimson-200  rounded-lg text-crimson-200 flex items-center gap-1 px-2 py-1" href='/tasks'><IoHomeOutline />Home</a>
 					<button className="text-sm border hover:border-transparent border-crimson-200  rounded-lg text-crimson-200 flex items-center gap-1 px-2 py-1" onClick={() => setShowTests(!showTests)}><GrTest />Output & Tests</button>
 					<button className={`text-sm text-gray-50 flex rounded-lg ${showSubmitPanding && 'cursor-not-allowed'} items-center gap-1 bg-crimson-100 hover:bg-crimson-200 px-2 py-1`} onClick={SubmitCode}>
 						{showSubmitPanding ? <TbRotateClockwise className='animate-spin' /> : <GrCloudUpload />}  Submit
-
 					</button>
+					<span className={`text-sm text-gray-400 flex rounded-lg items-center gap-1 px-2 py-1`}>
+						{taskStatus ?
+							<span>Last submission status: <span className=''>{taskStatus}</span></span>
+							: 'Sumbit your first submittion...'}
+
+					</span>
+
 
 				</div>
 				<div className='flex items-center'>

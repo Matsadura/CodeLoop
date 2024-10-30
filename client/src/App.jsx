@@ -10,6 +10,7 @@ import NavBar from './components/NavBar';
 import Tasks from './scenes/Tasks';
 import LogIn from './scenes/LogIn';
 import { useState } from 'react';
+import Profile from './scenes/Profile';
 
 
 
@@ -20,6 +21,7 @@ const navigation = [
   { id: 4, name: 'Catalog', title: 'Here is our catalogs', href: '/catalogs', current: false },
   { id: 5, name: 'Create task', title: 'Create new task', href: '/task/create', current: false },
 ]
+
 
 
 
@@ -55,19 +57,27 @@ function RoutesWithNav() {
           element={<Tasks setNav={() => setCurrPage(2)} />}
         />
         <Route path='/catalogs/:id_catalog/tasks' element={<Tasks setNav={() => setCurrPage(2)} />} />
-        <Route
+        {/* <Route
           path="/tasks/:taskId"
           element={
             <PrivateRoute>
               <DevSpace setTitle={setTitle} />
             </PrivateRoute>
           }
-        />
+        /> */}
         <Route
           path="/task/create"
           element={
             <PrivateRoute>
               <CreateNewTask setNav={() => setCurrPage(5)} />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <PrivateRoute>
+              <Profile setNav={() => setCurrPage(-1)} />
             </PrivateRoute>
           }
         />
@@ -85,8 +95,16 @@ function App() {
       <Router>
         <Routes>
           {/* <Route path="/split" element={<DevSpace />} /> */}
-          <Route path="/login" element={<LogIn />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<PrivateRoute open={true}><LogIn /></PrivateRoute>} />
+          <Route path="/register" element={<PrivateRoute open={true}><Register /></PrivateRoute>} />
+          <Route
+            path="/tasks/:taskId"
+            element={
+              <PrivateRoute>
+                <DevSpace />
+              </PrivateRoute>
+            }
+          />
           <Route path="*" element={<RoutesWithNav />} />
         </Routes>
       </Router>

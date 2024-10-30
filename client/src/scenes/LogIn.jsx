@@ -4,14 +4,20 @@ import PrimaryBtn from "../components/PrimaryBtn";
 import { request } from '../tools/requestModule';
 import { useNavigate } from 'react-router-dom';
 import { FaCode } from "react-icons/fa6";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useContext } from "react";
+import { DataContext } from "../components/Context";
 
 export default function LogIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [formErr, setformErr] = useState(null);
+  const { isAuthenticated } = useContext(DataContext);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    if (isAuthenticated) navigate('/profile');
+  }, []);
 
   function hondleSubmit(e) {
     e.preventDefault();

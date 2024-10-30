@@ -24,9 +24,8 @@ import { useNavigate } from 'react-router-dom';
 //   { id: 4, name: 'Catalog', href: '/catalogs', current: false },
 // ]
 const userNavigation = [
-  { name: 'Your Profile', href: '#' },
-  { name: 'Settings', href: '#' },
-  { name: 'Sign out', href: '#' },
+  { name: 'Your Profile', href: '/profile' },
+  // { name: 'Settings', href: '#' },
 ]
 
 export default function NavBar({ children, title, navigation }) {
@@ -54,7 +53,7 @@ export default function NavBar({ children, title, navigation }) {
 
                       {/* Profile dropdown */}
                       {isAuthenticated ?
-                        <UserAvatarWideScreen userNavigation={userNavigation} user={user} />
+                        <UserAvatarWideScreen userNavigation={userNavigation} />
                         : <div className='flex items-center gap-3'>
                           <PrimaryBtnOutline label="Login" action={() => navigate('/login')} />
                           <PrimaryBtn label="Register" action={() => navigate('/register')} />
