@@ -1,17 +1,45 @@
-import { Fragment } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { Menu, Transition } from '@headlessui/react';
+import { request } from '../tools/requestModule';
 
 
-export default function UserAvatarWideScreen({ userNavigation, user }) {
+export default function UserAvatarWideScreen({ userNavigation }) {
+  const [picUrl, setPicUrl] = useState(null);
+
+  function logout(e) {
+    event.preventDefault();
+    localStorage.removeItem('_token');
+    window.location.replace(event.currentTarget.href);
+  }
+
+  useEffect(() => {
+    const requestHeader = {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    };
+    request("/users/profile", requestHeader).then((res) => {
+      if (res.status === 200) {
+        setPicUrl(res.data.profile_pic);
+      } else initProfile();
+    }).catch((e) => console.error("Error updating user profile:", e));
+  }, []);
+
+  function initProfile() {
+    const requestHeader = {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ profile_pic: import.meta.env.VITE_DEFAULT_AVATAR, bio: 'Hello...' })
+    };
+    request("/users/profile", requestHeader).then((res) => {
+      setPicUrl(res.data.profile_pic);
+    }).catch((e) => console.error("Error Creating user profile:", e));
+  }
+
   return <Menu as="div" className="relative ml-3">
     <div>
       <Menu.Button className="flex max-w-xs items-center rounded-full bg-gray-800 text-sm text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800">
         <span className="sr-only">Open user menu</span>
-        {user.imageUrl ?
-          <img className="h-10 w-10 rounded-full" src={user.imageUrl} alt="user image profile" />
-          :
-          <img className="h-10 w-10 rounded-full" src='https://i.pinimg.com/originals/ed/1b/58/ed1b58e5741ea17739e673a6d30182df.jpg' alt="user image profile" />
-        }
+        <img className="h-10 w-10 rounded-full" src={picUrl} alt="user image profile" />
       </Menu.Button>
     </div>
     <Transition
@@ -36,6 +64,17 @@ export default function UserAvatarWideScreen({ userNavigation, user }) {
             )}
           </Menu.Item>
         ))}
+        <Menu.Item>
+          {() => (
+            <a
+              onClick={logout}
+              href='/'
+              className="block px-4 py-2 text-sm text-gray-50 hover:bg-violet-500"
+            >
+              Log Out
+            </a>
+          )}
+        </Menu.Item>
       </Menu.Items>
     </Transition>
   </Menu>

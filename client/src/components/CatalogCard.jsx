@@ -1,25 +1,28 @@
 
 import { request } from '../tools/requestModule';
+import { useNavigate } from 'react-router-dom';
 import { TiArrowRight } from 'react-icons/ti';
 import { useEffect, useState } from 'react';
 import { FaTasks } from 'react-icons/fa';
 
 
 
-const catalogs = [
-  {
-    id: 5,
-    title: 'Write your Libft',
-    description: 'Your own library is not that Hard',
-    tasksCount: 61,
-    difficulty: 'HARD',
-    imageUrl:
-      'https://www.britefish.net/wp-content/uploads/2019/07/logo-c-1.png',
-  }
-]
+// const catalogs = [
+//   {
+//     id: 5,
+//     title: 'Write your Libft',
+//     description: 'Your own library is not that Hard',
+//     tasksCount: 61,
+//     difficulty: 'HARD',
+//     imageUrl:
+//       'https://www.britefish.net/wp-content/uploads/2019/07/logo-c-1.png',
+//   }
+// ]
 
 export default function CatalogCards({ setNav }) {
   const [catalogs, setCatalogs] = useState([]);
+  const navigate = useNavigate();
+
   useEffect(() => { setNav() }, []);
 
   useEffect(() => {
@@ -80,13 +83,13 @@ export default function CatalogCards({ setNav }) {
                 </div>
               </div>
               <div className="flex w-0 flex-1">
-                <a
-                  href={'catalogs/id'}
+                <button
+                  onClick={() => navigate(`/catalogs/${catalog.id}/tasks`)}
                   className="relative mr-4 inline-flex w-0 flex-1 items-center font-bold justify-end rounded-bl-lg border border-transparent py-4 text-sm text-crimson-200 hover:text-crimson-100"
                 >
                   <span className="ml-3 text-sm">START</span>
                   <TiArrowRight className="text-2xl" />
-                </a>
+                </button>
               </div>
             </div>
           </div>

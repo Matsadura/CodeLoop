@@ -9,6 +9,7 @@ import { FaCode } from 'react-icons/fa6';
 import { DataContext } from "./Context";
 import PrimaryBtn from './PrimaryBtn';
 import { useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 // const user = {
 //   name: 'Tom Cook',
@@ -23,13 +24,13 @@ import { useContext } from 'react';
 //   { id: 4, name: 'Catalog', href: '/catalogs', current: false },
 // ]
 const userNavigation = [
-  { name: 'Your Profile', href: '#' },
-  { name: 'Settings', href: '#' },
-  { name: 'Sign out', href: '#' },
+  { name: 'Your Profile', href: '/profile' },
+  // { name: 'Settings', href: '#' },
 ]
 
 export default function NavBar({ children, title, navigation }) {
   const { user, isAuthenticated } = useContext(DataContext);
+  const navigate = useNavigate();
 
 
   return (
@@ -52,7 +53,7 @@ export default function NavBar({ children, title, navigation }) {
 
                       {/* Profile dropdown */}
                       {isAuthenticated ?
-                        <UserAvatarWideScreen userNavigation={userNavigation} user={user} />
+                        <UserAvatarWideScreen userNavigation={userNavigation} />
                         : <div className='flex items-center gap-3'>
                           <PrimaryBtnOutline label="Login" action={() => navigate('/login')} />
                           <PrimaryBtn label="Register" action={() => navigate('/register')} />
@@ -87,7 +88,7 @@ export default function NavBar({ children, title, navigation }) {
             <h1 className="text-lg font-semibold leading-6 text-gray-100">{title}</h1>
           </div>
         </header>
-        <main>
+        <main className='bg-violet-500'>
           <div className="mx-auto p-4 max-w-7xl py-6 sm:px-6 lg:px-8">
             {children}
           </div>

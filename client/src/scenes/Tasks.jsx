@@ -1,20 +1,56 @@
-import { useEffect } from 'react';
+import { request } from '../tools/requestModule';
+import { useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 
-const tasks = [
-	{
-		id: 1,
-		title: 'Cpu is important',
-		status: 'Error',
-		difficulty: 'HARD'
-	},
-	{ id: 2, title: 'Werite your own shell', status: 'Done', difficulty: 'HARD' },
-	{ id: 3, title: 'Lindsay Walton', status: 'Compile error', difficulty: 'HARD' },
-	{ id: 4, title: 'Lindsay Walton', status: 'SegFault', difficulty: 'HARD' },
-	{ id: 5, title: 'Lindsay Walton', status: 'Done', difficulty: 'HARD' },
-]
+// const tasks = [
+// 	{
+// 		id: 1,
+// 		title: 'Cpu is important',
+// 		status: 'Error',
+// 		difficulty: 'HARD'
+// 	},
+// 	{ id: 2, title: 'Werite your own shell', status: 'Done', difficulty: 'HARD' },
+// 	{ id: 3, title: 'Lindsay Walton', status: 'Compile error', difficulty: 'HARD' },
+// 	{ id: 4, title: 'Lindsay Walton', status: 'SegFault', difficulty: 'HARD' },
+// 	{ id: 5, title: 'Lindsay Walton', status: 'Done', difficulty: 'HARD' },
+// ]
 
 export default function Tasks({ setNav }) {
+	const { id_catalog } = useParams();
+	const [tasks, setTasks] = useState([]);
+	const navigate = useNavigate();
+
+
 	useEffect(() => setNav(), []);
+
+	useEffect(() => {
+		if (id_catalog) {
+			getCatalogTasks(id_catalog);
+		} else {
+			getAllTasks();
+		}
+	}, []);
+
+	function getCatalogTasks(catalog_id) {
+		const request_header = {
+			method: "GET",
+			headers: { "Content-Type": "application/json" },
+		};
+		request(`/categories/${catalog_id}/tasks`, request_header).then((res) => {
+			setTasks(res.data);
+		});
+	}
+
+	function getAllTasks() {
+		const request_header = {
+			method: "GET",
+			headers: { "Content-Type": "application/json" },
+		};
+		request(`/tasks`, request_header).then((res) => {
+			setTasks(res.data);
+		});
+	}
 
 	return (
 		<div className="px-4 sm:px-6 lg:px-8">
@@ -28,9 +64,9 @@ export default function Tasks({ setNav }) {
 										<th scope="col" className="py-3.5 max-w-52 pl-4 pr-3 text-left text-sm font-semibold text-crimson-200 sm:pl-6">
 											Title
 										</th>
-										<th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-crimson-200">
+										{/* <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-crimson-200">
 											Status
-										</th>
+										</th> */}
 										<th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-crimson-200">
 											Difficulty
 										</th>
@@ -41,19 +77,20 @@ export default function Tasks({ setNav }) {
 									{tasks.map((task, taskIdx) => (
 										<tr key={task.id} className={taskIdx % 2 === 0 ? undefined : 'bg-violet-300'}>
 											<td className="md:max-w-80 text-nowrap md:text-wrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">
-												<a
+												<button
 													className='text-white hover:text-crimson-200 cursor-pointer'
-													href={`/catalogs/15/tasks/${task.id}`}
+													// href={`/tasks/${task.id}`}
+													onClick={() => navigate(`/tasks/${task.id}`)}
 												>
 													{task.title}
-												</a>
+												</button>
 											</td>
-											<td className="whitespace-nowrap px-3 py-4 text-sm text-gray-300">
+											{/* <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-300">
 												<div className='flex items-center gap-2'>
 													<div className='rounded-full w-[8px] h-[8px] bg-red-700'></div>
 													<div>{task.status}</div>
 												</div>
-											</td>
+											</td> */}
 											<td className="whitespace-nowrap px-3 py-4 text-sm text-gray-300">{task.difficulty}</td>
 										</tr>
 									))}

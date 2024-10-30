@@ -1,20 +1,24 @@
-import LogIn from './scenes/LogIn';
-import Register from './scenes/Register';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import NavBar from './components/NavBar';
-import { useState } from 'react';
-import NotFound from './components/NotFound';
-import CatalogCards from './components/CatalogCard';
-import Tasks from './scenes/Tasks';
-import DevSpace from './scenes/DevSpace';
-import { ContextProvider } from "./components/Context.jsx";
 import { PrivateRoute } from './components/PrivateRoute.jsx';
+import { ContextProvider } from "./components/Context.jsx";
+import CreateNewTask from './scenes/CreateNewTask.jsx';
+import CatalogCards from './components/CatalogCard';
+import NotFound from './components/NotFound';
+import DevSpace from './scenes/DevSpace';
+import Register from './scenes/Register';
+import NavBar from './components/NavBar';
+import Profile from './scenes/Profile';
+import Tasks from './scenes/Tasks';
+import LogIn from './scenes/LogIn';
+import { useState } from 'react';
+import Home from './scenes/Home.jsx';
+
 
 const navigation = [
-  { id: 1, name: 'Home', title: 'Home', href: '/', current: false },
-  { id: 2, name: 'Tasks', title: 'Tasks', href: '/catalogs/1/tasks', current: false },
-  { id: 3, name: 'Dev-Space', title: 'Where the magic happens', href: '/catalogs/1/tasks/1', current: false },
-  { id: 4, name: 'Catalog', title: 'Tasks', href: '/catalogs', current: false },
+  // { id: 1, name: 'Home', title: 'Home', href: '/', current: false },
+  { id: 2, name: 'Tasks', title: 'Index of tasks', href: '/tasks', current: false },
+  { id: 4, name: 'Catalog', title: 'Here is our catalogs', href: '/catalogs', current: false },
+  { id: 5, name: 'Create task', title: 'Create new task', href: '/task/create', current: false },
 ]
 
 function RoutesWithNav() {
@@ -33,7 +37,6 @@ function RoutesWithNav() {
       } else item.current = false;
     }
     setNav(newNav);
-    console.log(newNav)
   }
 
 
@@ -41,15 +44,31 @@ function RoutesWithNav() {
     <PrivateRoute open={true}>
       <Routes>
         <Route
+          path='/'
+          element={<Home setNav={() => setCurrPage(-1)} />}
+        />
+        <Route
           path='/catalogs'
           element={<CatalogCards setNav={() => setCurrPage(4)} />}
         />
-        <Route path='/catalogs/:id/tasks' element={<Tasks setNav={() => setCurrPage(2)} />} />
         <Route
-          path="/catalogs/:id/tasks/:id"
+          path='/tasks'
+          element={<Tasks setNav={() => setCurrPage(2)} />}
+        />
+        <Route path='/catalogs/:id_catalog/tasks' element={<Tasks setNav={() => setCurrPage(2)} />} />
+        <Route
+          path="/task/create"
           element={
             <PrivateRoute>
-              <DevSpace setNav={() => setCurrPage(3)} />
+              <CreateNewTask setNav={() => setCurrPage(5)} />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <PrivateRoute>
+              <Profile setNav={() => setCurrPage(-1)} />
             </PrivateRoute>
           }
         />
@@ -59,14 +78,23 @@ function RoutesWithNav() {
   </NavBar>
 }
 
+
+
 function App() {
   return (
     <ContextProvider>
       <Router>
         <Routes>
-          {/* <Route path="/split" element={<DevSpace />} /> */}
-          <Route path="/login" element={<LogIn />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<PrivateRoute open={true}><LogIn /></PrivateRoute>} />
+          <Route path="/register" element={<PrivateRoute open={true}><Register /></PrivateRoute>} />
+          <Route
+            path="/tasks/:taskId"
+            element={
+              <PrivateRoute>
+                <DevSpace />
+              </PrivateRoute>
+            }
+          />
           <Route path="*" element={<RoutesWithNav />} />
         </Routes>
       </Router>
