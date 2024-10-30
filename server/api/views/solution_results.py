@@ -23,8 +23,8 @@ def get_solution_results(submission_id):
     if not submission:
         return jsonify({'error': 'Submission not found'}), 404
     solution_result = storage.all_list_specific(Solution_Result,
-                                           'submission_id',
-                                           submission_id)
+                                                'submission_id',
+                                                submission_id)
     if not solution_result:
         return jsonify({'error': 'Solution result not found'}), 404
     return jsonify([result.to_dict() for result in solution_result])

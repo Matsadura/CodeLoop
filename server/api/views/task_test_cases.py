@@ -71,10 +71,12 @@ def create_task_test_case(task_id):
         expected_output = data.get('expected_output')
         if not input_text or not expected_output:
             return jsonify({'error': 'Missing input or expected output'}), 400
-        existing_case = storage.get_specific(
+        existing_case = storage.get_specific_double(
             Task_Test_Cases,
             'input',
-            input_text
+            input_text,
+            'task_id',
+            task_id
             )
         if existing_case:
             return jsonify({'error': 'Test case already exists'}), 400
