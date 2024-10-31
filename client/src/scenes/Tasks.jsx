@@ -16,9 +16,19 @@ import { useEffect, useState } from 'react';
 // 	{ id: 5, title: 'Lindsay Walton', status: 'Done', difficulty: 'HARD' },
 // ]
 
+function NoTasks() {
+	return <tr className='bg-violet-300'>
+		<td className='col-span-full text-center py-8' colSpan={2}>
+			<span className='text-3xl  font-bold text-gray-50'>Empty buffer :(</span>
+			<a href='/task/create' className='text-crimson-200 block mt-4'>Be the first creator</a>
+		</td>
+	</tr>
+}
+
 export default function Tasks({ setNav }) {
 	const { id_catalog } = useParams();
 	const [tasks, setTasks] = useState([]);
+	const [catalogInfo, setCatalogInfo] = useState(null);
 	const navigate = useNavigate();
 
 
@@ -26,6 +36,17 @@ export default function Tasks({ setNav }) {
 
 	useEffect(() => {
 		if (id_catalog) {
+			let requestHeader = {
+				method: 'GET',
+				headers: { 'Content-Type': 'application/json' },
+			};
+			request("/categories", requestHeader)
+				.then((res) => {
+					if (res.status !== 201) {
+						const FetchedCatalogInfo = res.data.find((c => c.id === id_catalog));
+						setCatalogInfo(FetchedCatalogInfo);
+					}
+				}).catch((e) => console.error("Error getting catalog with id " + id_catalog, e));
 			getCatalogTasks(id_catalog);
 		} else {
 			getAllTasks();
@@ -55,6 +76,16 @@ export default function Tasks({ setNav }) {
 	return (
 		<div className="px-4 sm:px-6 lg:px-8">
 			<div className="mt-8 flex flex-col">
+				{catalogInfo ? <div className='mb-8'>
+					<div className='flex gap-12'>
+						<img className='h-52 rounded-md border border-crimson-200/30' src={catalogInfo.imageUrl} />
+						<div className='text-gray-300'>
+							<h1 className='text-gray-50 text-4xl font-bold mb-6 mt-2'>{catalogInfo.title}</h1>
+							<p>{catalogInfo.description}</p>
+						</div>
+					</div>
+				</div> : <h1 className='text-gray-50 text-4xl font-bold mb-6 mt-2'>All available tasks</h1>}
+
 				<div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
 					<div className="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
 						<div className="overflow-hidden ring-2 ring-white ring-opacity-5 border-2 border-crimson-200 border-opacity-80 md:rounded-lg">
@@ -73,8 +104,9 @@ export default function Tasks({ setNav }) {
 
 									</tr>
 								</thead>
+
 								<tbody className="bg-violet-400">
-									{tasks.map((task, taskIdx) => (
+									{tasks.length ? tasks.map((task, taskIdx) => (
 										<tr key={task.id} className={taskIdx % 2 === 0 ? undefined : 'bg-violet-300'}>
 											<td className="md:max-w-80 text-nowrap md:text-wrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">
 												<button
@@ -93,7 +125,7 @@ export default function Tasks({ setNav }) {
 											</td> */}
 											<td className="whitespace-nowrap px-3 py-4 text-sm text-gray-300">{task.difficulty}</td>
 										</tr>
-									))}
+									)) : <NoTasks />}
 								</tbody>
 							</table>
 						</div>

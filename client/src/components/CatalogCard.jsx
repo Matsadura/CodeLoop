@@ -58,7 +58,7 @@ export default function CatalogCards({ setNav }) {
                 </span> */}
               </div>
               <p className="mt-1 text-sm text-gray-500">{catalog.description}</p>
-              <span className="inline-block opacity-75 mt-5 border w-14 text-center bg-red-700 border-bluish-red flex-shrink-0 rounded-full text-gray-50 px-2 py-0.5 text-xs font-medium">
+              <span className="inline-block opacity-75 mt-5 border text-center text-gray-50 border-gray-50 flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-medium">
                 {catalog.difficulty}
               </span>
             </div>
@@ -87,7 +87,7 @@ export default function CatalogCards({ setNav }) {
                   onClick={() => navigate(`/catalogs/${catalog.id}/tasks`)}
                   className="relative mr-4 inline-flex w-0 flex-1 items-center font-bold justify-end rounded-bl-lg border border-transparent py-4 text-sm text-crimson-200 hover:text-crimson-100"
                 >
-                  <span className="ml-3 text-sm">START</span>
+                  <span className="ml-3 text-sm">Start</span>
                   <TiArrowRight className="text-2xl" />
                 </button>
               </div>

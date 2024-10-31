@@ -12,6 +12,7 @@ import Tasks from './scenes/Tasks';
 import LogIn from './scenes/LogIn';
 import { useState } from 'react';
 import Home from './scenes/Home.jsx';
+import CreateCatalog from './scenes/CreateCatalog.jsx';
 
 
 const navigation = [
@@ -19,6 +20,7 @@ const navigation = [
   { id: 2, name: 'Tasks', title: 'Index of tasks', href: '/tasks', current: false },
   { id: 4, name: 'Catalog', title: 'Here is our catalogs', href: '/catalogs', current: false },
   { id: 5, name: 'Create task', title: 'Create new task', href: '/task/create', current: false },
+  { id: 6, name: 'Create catalog', title: 'Create new catalog', href: '/catalog/create', current: false },
 ]
 
 function RoutesWithNav() {
@@ -61,6 +63,14 @@ function RoutesWithNav() {
           element={
             <PrivateRoute>
               <CreateNewTask setNav={() => setCurrPage(5)} />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/catalog/create"
+          element={
+            <PrivateRoute>
+              <CreateCatalog setNav={() => setCurrPage(6)} />
             </PrivateRoute>
           }
         />
