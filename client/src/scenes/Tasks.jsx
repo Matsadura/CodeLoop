@@ -2,6 +2,10 @@ import { request } from '../tools/requestModule';
 import { useNavigate } from 'react-router-dom';
 import { useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { MdFavoriteBorder } from "react-icons/md";
+import { MdOutlineFavorite } from "react-icons/md";
+import { PiSmileyMehLight } from "react-icons/pi";
+import { FaSort } from "react-icons/fa";
 
 // const tasks = [
 // 	{
@@ -29,6 +33,7 @@ export default function Tasks({ setNav }) {
 	const { id_catalog } = useParams();
 	const [tasks, setTasks] = useState([]);
 	const [catalogInfo, setCatalogInfo] = useState(null);
+	const [sortDesc, setSOrtDesc] = useState(false);
 	const navigate = useNavigate();
 
 
@@ -52,6 +57,17 @@ export default function Tasks({ setNav }) {
 			getAllTasks();
 		}
 	}, []);
+
+	function sortByLikes() {
+		if (sortDesc) {
+			setSOrtDesc(false);
+			setTasks(t => [...t].sort((a, b) => b.favoritesCount - a.favoritesCount));
+		} else {
+			setTasks(t => [...t].sort((a, b) => a.favoritesCount - b.favoritesCount));
+			setSOrtDesc(true);
+		}
+
+	}
 
 	function getCatalogTasks(catalog_id) {
 		const request_header = {
@@ -95,16 +111,14 @@ export default function Tasks({ setNav }) {
 										<th scope="col" className="py-3.5 max-w-52 pl-4 pr-3 text-left text-sm font-semibold text-crimson-200 sm:pl-6">
 											Title
 										</th>
-										{/* <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-crimson-200">
-											Status
-										</th> */}
 										<th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-crimson-200">
 											Difficulty
 										</th>
-
+										<th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-crimson-200">
+											<button className='rounded-md hover:text-crimson-100 flex items-center gap-1' onClick={sortByLikes}>Likes<FaSort /></button>
+										</th>
 									</tr>
 								</thead>
-
 								<tbody className="bg-violet-400">
 									{tasks.length ? tasks.map((task, taskIdx) => (
 										<tr key={task.id} className={taskIdx % 2 === 0 ? undefined : 'bg-violet-300'}>
@@ -117,13 +131,10 @@ export default function Tasks({ setNav }) {
 													{task.title}
 												</button>
 											</td>
-											{/* <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-300">
-												<div className='flex items-center gap-2'>
-													<div className='rounded-full w-[8px] h-[8px] bg-red-700'></div>
-													<div>{task.status}</div>
-												</div>
-											</td> */}
 											<td className="whitespace-nowrap px-3 py-4 text-sm text-gray-300">{task.difficulty}</td>
+											<td className="whitespace-nowrap px-3 py-4 text-sm text-gray-300">
+												<Likes taskId={task.id} likesCount={task.favoritesCount} taskTitle={task.title} />
+											</td>
 										</tr>
 									)) : <NoTasks />}
 								</tbody>
@@ -134,4 +145,71 @@ export default function Tasks({ setNav }) {
 			</div>
 		</div>
 	)
+}
+
+import { useContext } from 'react';
+import { DataContext } from "../components/Context";
+
+function Likes({ taskId, taskTitle, likesCount }) {
+	const [like, setLike] = useState(false);
+	const { user } = useContext(DataContext);
+	const [currCount, setCurrCount] = useState(likesCount);
+	const [clicks, setClicks] = useState(0);
+
+	useEffect(() => {
+		setUserStateWithTask();
+	}, []);
+
+	function setUserStateWithTask() {
+		let requestHeader = {
+			method: 'GET',
+			headers: { 'Content-Type': 'application/json' },
+		};
+		request('/users/favorites', requestHeader).then((res) => {
+			console.log(res.data);
+			const userLikesTaks = res.data.find(t => t.task_id === taskId);
+			if (userLikesTaks) setLike(true);
+		});
+	}
+
+	useEffect(() => setClicks(c => c + 1), [currCount]);
+
+	function handleLike() {
+		like ? removeLike() : addLike();
+	}
+
+	function addLike() {
+		if (clicks > 8) return;
+
+		let requestHeader = {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ title: taskTitle })
+		};
+		request('/users/favorites', requestHeader).then((res) => {
+			setLike(true);
+			setCurrCount((c) => c + 1);
+		}).then(() => console.log('Like added!'));
+	}
+
+	function removeLike() {
+		if (clicks > 8) return;
+		let requestHeader = {
+			method: 'DELETE',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ title: taskTitle })
+		};
+		request('/users/favorites', requestHeader).then((res) => {
+			setLike(false);
+			setCurrCount((c) => c > 0 ? c - 1 : c);
+		}).then(() => console.log('Like removed!'));
+	}
+
+	return <div className='flex items-center gap-2 select-none'>
+		{clicks > 8 ? <PiSmileyMehLight className='text-xl' /> :
+			<button className='hover:text-crimson-100 text-crimson-200' onClick={handleLike}>
+				{like ? <MdOutlineFavorite className='text-xl' /> : <MdFavoriteBorder className='text-xl' />}
+			</button>}
+		<span className='w-10'>{currCount}</span>
+	</div>
 }

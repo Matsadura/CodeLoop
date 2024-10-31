@@ -61,7 +61,11 @@ function RoutesWithNav() {
         />
         <Route
           path='/tasks'
-          element={<Tasks setNav={() => setCurrPage(2)} />}
+          element={
+            <PrivateRoute>
+              <Tasks setNav={() => setCurrPage(2)} />
+            </PrivateRoute>
+          }
         />
         <Route path='/catalogs/:id_catalog/tasks' element={<Tasks setNav={() => setCurrPage(2)} />} />
         <Route
