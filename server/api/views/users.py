@@ -59,8 +59,8 @@ def update_user_profile():
             - Message: "User profile deleted"
     PUT:
         - Input:
-            - first.title: String (optional)
-            - last.title: String (optional)
+            - first_name: String (optional)
+            - last_name: String (optional)
         Output:
             - User profile data
     """
@@ -78,10 +78,10 @@ def update_user_profile():
         data = request.get_json()
         if not data:
             return jsonify({"error": "No data provided"}), 400
-        if 'first.title' in data:
-            user_profile.first.title = data['first.title']
-        if 'last.title' in data:
-            user_profile.last.title = data['last.title']
+        if 'first_name' in data:
+            user_profile.first.title = data['first_name']
+        if 'last_name' in data:
+            user_profile.last.title = data['last_name']
         user_profile.updated_at = datetime.now()
         storage.save()
         return jsonify(user_profile.to_dict()), 200
