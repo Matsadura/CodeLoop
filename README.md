@@ -1,5 +1,8 @@
 # CodeLoop 🔄
 
+![image](https://github.com/user-attachments/assets/3868c37e-9ce7-4e24-8b5f-e11ed98eaf98)
+
+
 > A community-driven coding platform where everyone is both a student and an educator.
 
 [![Made with React](https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB)](https://reactjs.org/)
