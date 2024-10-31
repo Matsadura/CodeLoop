@@ -1,4 +1,3 @@
-import { PhotoIcon, UserCircleIcon } from '@heroicons/react/24/solid';
 import { useEffect } from 'react';
 import InputWithLabel from '../components/InputWithLabel';
 import TextEreaWithLabel from '../components/TextEreaWithLabel';
@@ -198,13 +197,13 @@ export default function CreateNewTask({ setNav }) {
 	}
 
 	return (
-		<form className="flex flex-col jusstify-center mx-auto gap-8 max-w-[700px]">
+		<form className="flex flex-col gap-8 max-w-[700px]">
 			<InputWithLabel label='Task Title' identifier='task_lable' type='text' value={taskTitle} setValue={setTaskTitle} error={errtaskTitle} />
 			<TextEreaWithLabel label='Task description (in markdown)' identifier='task_lable' type='text' value={taskDesc} setValue={setTaskDesc} error={errtaskDesc} />
 			<SelectWithLabel identefier='task_difficulty' label='Task difficulty' value={taskDif} setValue={setTaskDif} error={errtaskDif}>
 				<option value="easy">Easy</option>
-				<option value="hard">Hard</option>
 				<option value="medium">Medium</option>
+				<option value="hard">Hard</option>
 			</SelectWithLabel>
 			<SelectWithLabel identefier='task_category' label='Task Category' value={catalogId} setValue={setCatalogId} error={errtaskCatalog}>
 				{catalogs.map((c, i) => <option key={c.id} value={c.id} >{c.title}</option>)}

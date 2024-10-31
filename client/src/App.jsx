@@ -12,6 +12,8 @@ import Tasks from './scenes/Tasks';
 import LogIn from './scenes/LogIn';
 import { useState } from 'react';
 import Home from './scenes/Home.jsx';
+import CreateCatalog from './scenes/CreateCatalog.jsx';
+import UpdateCreatedTask from './scenes/UpdateCreatedTask.jsx';
 
 
 const navigation = [
@@ -19,6 +21,8 @@ const navigation = [
   { id: 2, name: 'Tasks', title: 'Index of tasks', href: '/tasks', current: false },
   { id: 4, name: 'Catalog', title: 'Here is our catalogs', href: '/catalogs', current: false },
   { id: 5, name: 'Create task', title: 'Create new task', href: '/task/create', current: false },
+  { id: 6, name: 'Create catalog', title: 'Create new catalog', href: '/catalog/create', current: false },
+  { id: 7, name: 'Update task', title: 'Update created task', href: '/task/143203f8-21bb-4b4d-abb8-5e268e0e512c/update', current: false },
 ]
 
 function RoutesWithNav() {
@@ -49,7 +53,11 @@ function RoutesWithNav() {
         />
         <Route
           path='/catalogs'
-          element={<CatalogCards setNav={() => setCurrPage(4)} />}
+          element={
+            <PrivateRoute>
+              <CatalogCards setNav={() => setCurrPage(4)} />
+            </PrivateRoute>
+          }
         />
         <Route
           path='/tasks'
@@ -61,6 +69,22 @@ function RoutesWithNav() {
           element={
             <PrivateRoute>
               <CreateNewTask setNav={() => setCurrPage(5)} />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/task/:taskId/update"
+          element={
+            <PrivateRoute>
+              <UpdateCreatedTask setNav={() => setCurrPage(7)} />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/catalog/create"
+          element={
+            <PrivateRoute>
+              <CreateCatalog setNav={() => setCurrPage(6)} />
             </PrivateRoute>
           }
         />

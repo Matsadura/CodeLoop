@@ -7,9 +7,9 @@ export default function UserAvatarWideScreen({ userNavigation }) {
   const [picUrl, setPicUrl] = useState(null);
 
   function logout(e) {
-    event.preventDefault();
+    e.preventDefault();
     localStorage.removeItem('_token');
-    window.location.replace(event.currentTarget.href);
+    window.location.replace(e.currentTarget.href);
   }
 
   useEffect(() => {
