@@ -40,7 +40,11 @@ export default function CatalogCards({ setNav }) {
       headers: { "Content-Type": "application/json" },
     };
     request('/categories', request_header).then((res) => {
-      setCatalogs(res.data);
+      if (res.data) {
+        console.log(res.data);
+        setCatalogs(res.data);
+      }
+
     });
   }
 

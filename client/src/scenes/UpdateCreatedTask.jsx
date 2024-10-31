@@ -6,10 +6,15 @@ import { IoAddCircleOutline } from "react-icons/io5";
 import PrimaryBtn from '../components/PrimaryBtn';
 import { request } from '../tools/requestModule';
 import SelectWithLabel from '../components/SelectWithLable';
+import { IoMdCheckmark } from "react-icons/io";
+import { HiXMark } from "react-icons/hi2";
+
 
 function NewTestCase({ testIndex, tests, setTests }) {
 	const [testInput, setTestInput] = useState(tests[testIndex].input);
 	const [testOutput, setTestOutput] = useState(tests[testIndex].output);
+	const [sureToDelete, setSureToDelete] = useState(false);
+
 	const { taskId } = useParams();
 
 	useEffect(() => {
@@ -20,13 +25,17 @@ function NewTestCase({ testIndex, tests, setTests }) {
 	}, [testInput, testOutput]);
 
 	function removeTest() {
+		setSureToDelete(false);
 		const updatedState = [...tests];
-		if (tests[testIndex]) {
+		if (tests[testIndex].testId) {
 			const request_header = {
 				method: "DELETE",
 				headers: { "Content-Type": "application/json" },
 			};
-			request(`/tasks/${taskId}/test_cases/${tests[testIndex].testId}`, request_header);
+			request(`/tasks/${taskId}/test_cases/${tests[testIndex].testId}`, request_header)
+				.then(res => {
+					if (res.status === 200) console.log('Deleted sucessfully');
+				});
 		}
 		updatedState.splice(testIndex, 1);
 		setTests(updatedState);
@@ -37,11 +46,17 @@ function NewTestCase({ testIndex, tests, setTests }) {
 		<TextEreaWithLabel label='Input test' identifier='task_input' type='text' value={testInput} setValue={setTestInput} />
 		<TextEreaWithLabel label='Expected output' identifier='task_output' type='text' value={testOutput} setValue={setTestOutput} />
 
-		<button type='button' className='border border-red-600 px-2 py-1 rounded-lg text-red-600 mt-5 self-start' onClick={removeTest}>
+		{sureToDelete ? <div>
+			<span className='text-xl text-gray-300 mx-4'>Sure?</span>
+			<button type='button' className='border border-green-600 text-green-600 text-lg p-1 rounded-full mr-2' onClick={removeTest}><IoMdCheckmark /></button>
+			<button type='button' className='border border-red-600 text-red-600 text-lg p-1 rounded-full ' onClick={() => setSureToDelete(false)}><HiXMark /></button>
+		</div> : <button type='button' className='border border-red-600 px-2 py-1 rounded-lg text-red-600 mt-5 self-start' onClick={() => setSureToDelete(true)}>
 			Remove
 		</button>
+		}
 	</div>
 }
+
 
 export default function UpdateCreatedTask({ setNav }) {
 	const [tests, setTests] = useState([]);
@@ -49,6 +64,8 @@ export default function UpdateCreatedTask({ setNav }) {
 	const [taskDesc, setTaskDesc] = useState('');
 	const [taskDif, setTaskDif] = useState('easy');
 	const hasFetched = useRef(false);
+	const [notificationMessage, setNotificationMessage] = useState('');
+	const [isVisible, setIsVisible] = useState(true);
 
 	// errors
 	const [errtaskTitle, setErrTaskTitle] = useState('');
@@ -98,11 +115,9 @@ export default function UpdateCreatedTask({ setNav }) {
 				e.preventDefault();
 				window.location.replace(e.currentTarget.href);
 				console.error(res.data.error);
-			} else {
-				console.log(res.data)
-				res.data.length && res.data.forEach(t => addTest(t.input, t.expected_output, t.id));
-			}
-		}).catch(e => console.log('Failed to fetch a test case', e));
+			} else res.data.length && res.data.forEach(t => addTest(t.input, t.expected_output, t.id));
+
+		}).catch(e => console.error('Failed to fetch a test case', e));
 	}
 
 	//  Download existing task details and set task state
@@ -117,12 +132,10 @@ export default function UpdateCreatedTask({ setNav }) {
 				setTaskDesc(res.data.description);
 				setTaskDif(res.data.difficulty);
 			}
-		}).catch(e => console.log('Failed to fetch task details', e));
+		}).catch(e => console.error('Failed to fetch task details', e));
 	}
 
 	function updateTest(input, output, testId) {
-		console.log(input, output, testId);
-
 		return new Promise((resolve, reject) => {
 			const request_header = {
 				method: "PUT",
@@ -166,9 +179,11 @@ export default function UpdateCreatedTask({ setNav }) {
 		Promise.all(tests.map((t, index) => {
 			return t.testId ? updateTest(t.input, t.output, t.testId)
 				: uploadTest(t.input, t.output, taskDif).then((i => tests[index].testId = i));
-		}))
-			.then(() => console.log('Updated!'))
-			.catch(e => console.error(`Error updating test`, e));
+		})).then(() => console.log('Updated!'))
+			.catch((e) => {
+				setFormError(e);
+				console.error(`Error updating test`, e)
+			});
 	}
 
 	function handleUpdate(e) {
@@ -190,9 +205,6 @@ export default function UpdateCreatedTask({ setNav }) {
 			updateTests();
 		});
 	};
-
-
-
 
 	function wrongInputs() {
 		let errFound = false;

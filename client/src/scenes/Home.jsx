@@ -101,9 +101,9 @@ export default function Home() {
 						<div className="flex-1" />
 						<div className="w-full flex-1 bg-violet-200" />
 					</div>
-					<div className="mx-auto  max-w-7xl px-4 sm:px-6">
+					<div className="mx-auto max-w-7xl px-4 sm:px-6">
 						<img
-							className="relative rounded-lg shadow-lg border-2 border-crimson-200"
+							className="relative rounded-lg shadow-2xl shadow-crimson-200/20 border-2 border-crimson-200"
 							// src="https://tailwindui.com/plus/img/component-images/dark-project-app-screenshot.png"
 							src={appFullScreen}
 							alt="App screenshot"
@@ -156,7 +156,6 @@ export default function Home() {
 				</div>
 			</div>
 			<CreatingTaskFeature />
-
 		</div>
 	)
 }
