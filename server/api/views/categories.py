@@ -63,6 +63,7 @@ def categories():
 @app_views.route('/categories/<category_id>/tasks', methods=['GET'])
 @jwt_required()
 def get_category_tasks(category_id):
+    from models.user_favorite import User_Favorite
     """Get all tasks for a category"""
     category = storage.get_specific(Category, 'id', category_id)
     if not category:
@@ -70,4 +71,11 @@ def get_category_tasks(category_id):
     tasks = storage.all_list_specific(Task, 'category_id', category_id)
     if not tasks:
         return jsonify({'error': 'No tasks found for this category'}), 404
-    return jsonify([task.to_dict() for task in tasks])
+    tasks_list = []
+    for task in tasks:
+        task = task.to_dict()
+        task['favoritesCount'] = storage.count_specific(User_Favorite,
+                                                        'task_id',
+                                                        task['id'])
+        tasks_list.append(task)
+    return jsonify(tasks_list)
