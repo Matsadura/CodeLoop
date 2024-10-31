@@ -38,6 +38,7 @@ from models.task import Task
 @app_views.route('/tasks', methods=['GET', 'POST'])
 @jwt_required()
 def handle_tasks():
+    from models.user_favorite import User_Favorite
     """Handle tasks related requests
 
     - Header: Authorization Bearer Token (required)
@@ -54,8 +55,14 @@ def handle_tasks():
         tasks = storage.all_list(Task)
         if not tasks:
             return jsonify([])
-        tasks = [task.to_dict() for task in tasks]
-        return jsonify(tasks)
+        tasks_list = []
+        for task in tasks:
+            task = task.to_dict()
+            task['favoritesCount'] = storage.count_specific(User_Favorite,
+                                                            'task_id',
+                                                            task['id'])
+            tasks_list.append(task)
+        return jsonify(tasks_list)
 
     elif request.method == 'POST':  # Create a new task
         data = request.get_json()
