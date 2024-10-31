@@ -23,8 +23,6 @@ const navigation = [
   { id: 4, name: 'Catalog', title: 'Here is our catalogs', href: '/catalogs', current: false },
   { id: 5, name: 'Create task', title: 'Create new task', href: '/task/create', current: false },
   { id: 6, name: 'Create catalog', title: 'Create new catalog', href: '/catalog/create', current: false },
-  { id: 7, name: 'Update task', title: 'Update created task', href: '/task/143203f8-21bb-4b4d-abb8-5e268e0e512c/update', current: false },
-  { id: 8, name: 'Dashboard', title: 'Dashboard', href: '/dashboard', current: false },
 ]
 
 function RoutesWithNav() {
