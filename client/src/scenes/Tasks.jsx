@@ -7,22 +7,10 @@ import { MdOutlineFavorite } from "react-icons/md";
 import { PiSmileyMehLight } from "react-icons/pi";
 import { FaSort } from "react-icons/fa";
 
-// const tasks = [
-// 	{
-// 		id: 1,
-// 		title: 'Cpu is important',
-// 		status: 'Error',
-// 		difficulty: 'HARD'
-// 	},
-// 	{ id: 2, title: 'Werite your own shell', status: 'Done', difficulty: 'HARD' },
-// 	{ id: 3, title: 'Lindsay Walton', status: 'Compile error', difficulty: 'HARD' },
-// 	{ id: 4, title: 'Lindsay Walton', status: 'SegFault', difficulty: 'HARD' },
-// 	{ id: 5, title: 'Lindsay Walton', status: 'Done', difficulty: 'HARD' },
-// ]
 
 function NoTasks() {
 	return <tr className='bg-violet-300'>
-		<td className='col-span-full text-center py-8' colSpan={2}>
+		<td className='col-span-full text-center py-8' colSpan='3'>
 			<span className='text-3xl  font-bold text-gray-50'>Empty buffer :(</span>
 			<a href='/task/create' className='text-crimson-200 block mt-4'>Be the first creator</a>
 		</td>
@@ -124,7 +112,7 @@ export default function Tasks({ setNav }) {
 										<tr key={task.id} className={taskIdx % 2 === 0 ? undefined : 'bg-violet-300'}>
 											<td className="md:max-w-80 text-nowrap md:text-wrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">
 												<button
-													className='text-white hover:text-crimson-200 cursor-pointer'
+													className='text-white hover:text-crimson-200 cursor-pointer text-start'
 													// href={`/tasks/${task.id}`}
 													onClick={() => navigate(`/tasks/${task.id}`)}
 												>
