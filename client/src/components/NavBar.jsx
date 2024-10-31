@@ -11,20 +11,9 @@ import PrimaryBtn from './PrimaryBtn';
 import { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-// const user = {
-//   name: 'Tom Cook',
-//   email: 'tom@example.com',
-//   imageUrl:
-//     'https://i.pinimg.com/originals/ed/1b/58/ed1b58e5741ea17739e673a6d30182df.jpg',
-// }
-// const navigation = [
-//   { id: 1, name: 'Dashboard', href: '#', current: true },
-//   { id: 2, name: 'Tasks', href: '/catalogs/1/tasks', current: false },
-//   { id: 3, name: 'Dev-Space', href: '/catalogs/1/tasks/1', current: false },
-//   { id: 4, name: 'Catalog', href: '/catalogs', current: false },
-// ]
 const userNavigation = [
   { name: 'Your Profile', href: '/profile' },
+  { name: 'Dashboard', href: '/dashboard' },
   // { name: 'Settings', href: '#' },
 ]
 

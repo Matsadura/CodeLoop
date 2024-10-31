@@ -58,9 +58,11 @@ def handle_user_favorites():
         task = storage.get_specific(Task, 'title', data['title'])
         if not task:
             return jsonify({"error": "Task not found"}), 404
-        existing_favorite = storage.get_specific(User_Favorite,
+        existing_favorite = storage.get_specific_double(User_Favorite,
                                                  'task_id',
-                                                 task.id)
+                                                 task.id,
+                                                 'user_id',
+                                                 current_user)
         if existing_favorite:
             return jsonify({'error': "Task already favorited"}), 409
         user_favorite = User_Favorite(user_id=current_user, task_id=task.id)
