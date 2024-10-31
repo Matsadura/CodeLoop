@@ -79,9 +79,9 @@ def update_user_profile():
         if not data:
             return jsonify({"error": "No data provided"}), 400
         if 'first_name' in data:
-            user_profile.first.title = data['first_name']
+            user_profile.first_name = data['first_name']
         if 'last_name' in data:
-            user_profile.last.title = data['last_name']
+            user_profile.last_name = data['last_name']
         user_profile.updated_at = datetime.now()
         storage.save()
         return jsonify(user_profile.to_dict()), 200
