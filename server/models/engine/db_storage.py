@@ -130,3 +130,23 @@ class DBStorage:
         If no class is passed, returns the count of all objects in storage.
         """
         return len(self.all_list_specific(cls, attribute, value))
+
+    def count_specific_double(self, cls, attr_1, val_1, attr_2, val_2):
+        """
+        Returns the number of objects in storage matching the given class.
+        If no class is passed, returns the count of all objects in storage.
+        """
+        return len(self.__session.query(cls).filter(
+            getattr(cls, attr_1) == val_1,
+            getattr(cls, attr_2) == val_2).all())
+
+    def count_specific_triple(self, cls, attr_1, val_1,
+                              attr_2, val_2, attr_3, val_3):
+        """
+        Returns the number of objects in storage matching the given class.
+        If no class is passed, returns the count of all objects in storage.
+        """
+        return len(self.__session.query(cls).filter(
+            getattr(cls, attr_1) == val_1,
+            getattr(cls, attr_2) == val_2,
+            getattr(cls, attr_3) == val_3).all())
