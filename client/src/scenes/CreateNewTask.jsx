@@ -1,4 +1,3 @@
-import { PhotoIcon, UserCircleIcon } from '@heroicons/react/24/solid';
 import { useEffect } from 'react';
 import InputWithLabel from '../components/InputWithLabel';
 import TextEreaWithLabel from '../components/TextEreaWithLabel';
