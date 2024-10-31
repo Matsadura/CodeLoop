@@ -25,7 +25,7 @@ export default function Dashboard({ setNav }) {
 		});
 	}
 
-	return <div className="px-4 sm:px-6 lg:px-8">
+	return tasks.length ? <div className="px-4 sm:px-6 lg:px-8">
 		<div className='grid grid-cols-2'>
 			<div className="mt-8 flex flex-col">
 				<h1 className='text-gray-50 text-4xl font-bold mb-6 mt-2'>Your Creations!</h1>
@@ -44,7 +44,7 @@ export default function Dashboard({ setNav }) {
 									</tr>
 								</thead>
 								<tbody className="bg-violet-400">
-									{tasks.length ? tasks.map((task, taskIdx) => (
+									{tasks.map((task, taskIdx) => (
 										<tr key={task.id} className={taskIdx % 2 === 0 ? undefined : 'bg-violet-300'}>
 											<td className="md:max-w-80 text-nowrap md:text-wrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">
 												<button
@@ -65,7 +65,7 @@ export default function Dashboard({ setNav }) {
 												</button>
 											</td>
 										</tr>
-									)) : null}
+									))}
 								</tbody>
 							</table>
 						</div>
@@ -73,5 +73,5 @@ export default function Dashboard({ setNav }) {
 				</div>
 			</div>
 		</div>
-	</div>
+	</div> : null
 }
