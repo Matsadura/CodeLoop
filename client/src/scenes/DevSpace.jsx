@@ -64,7 +64,7 @@ export default function DevSpace({ setTitle }) {
     };
     request(`/tasks/${taskId}/submissions`, request_header).then((res) => {
       if (res.data.length === 0)
-        setSnippet('import sys\n\ndef solution(input):\n    # Your solution code TESTING\n    data = eval(input)\n    output = 0\n    for i in data:\n        output += i\n    return output\n\n\nif __name__ == \"__main__\":\n    input_data = sys.stdin.read()\n    result = solution(input_data)\n    print(result)\n');
+        setSnippet('def solution(inputs):\n    # Your solution code\n    pass\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n# do _not_ change this function\nimport sys\ndef execute_code(input):\n    data = eval(input)\n    return solution(data)\nif __name__ == \"__main__\":\n    input_data = sys.stdin.read()\n    result = execute_code(input_data)\n    print(result)\n');
       else {
         res.data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         setSnippet(res.data[0].code);

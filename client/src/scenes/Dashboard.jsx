@@ -16,7 +16,7 @@ function CatgalogProgress({ catalogTitle, data }) {
 
 
 	return data.count_submissions > 0 ? (
-		<div className="w-full max-w-3xl border border-crimson-200 bg-violet-400/50 rounded-lg shadow-lg overflow-hidden">
+		<div className="w-full max-w-3xl border border-crimson-200 bg-violet-400/50 rounded-lg shadow-lg overflow-hidden mb-8">
 			<div className="p-6">
 				<h2 className="text-2xl font-bold text-gray-50 mb-4 pb-4 border-b border-b-crimson-200/50">{catalogTitle}</h2>
 				<div className="flex flex-col md:flex-row gap-6">
