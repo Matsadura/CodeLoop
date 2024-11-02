@@ -54,7 +54,7 @@ docker compose up -d
 3. Set up the backend
 ```bash
 cd server
-python -m venv flask
+python3 -m venv flask
 source flask/bin/activate
 pip3 install flask==2.1.0 werkzeug==2.1.1 flask-cors==4.0.1 sqlalchemy==1.4.22 mysqlclient==2.2.4 python-dotenv flask-jwt-extended requests
 ```
@@ -80,7 +80,7 @@ JWT_SECRET_KEY=your-key-here
 docker compose up -d mysql client
 
 # In server directory
-python -m api.app
+python3 -m api.app
 ```
 
 
