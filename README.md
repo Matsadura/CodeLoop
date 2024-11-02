@@ -62,7 +62,7 @@ pip3 install flask==2.1.0 werkzeug==2.1.1 flask-cors==4.0.1 sqlalchemy==1.4.22 m
 4. Configure environment variables
 ```bash
 export CODE_DB_HOST=0.0.0.0
-export CODE_DB_NANE=CODE_DB
+export CODE_DB_NAME=CODE_DB
 export CODE_DB_USER=CODE_USER
 export CODE_DB_PASSWORD=CODE_PASSWORD
 
