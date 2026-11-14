@@ -6,7 +6,7 @@ import FormMessage from '../components/FormMessage';
 import PageStatus from '../components/PageStatus';
 import { DataContext } from '../components/dataContext';
 import { requestJson } from '../tools/requestModule';
-import { DEFAULT_AVATAR } from '../tools/avatar';
+import { DEFAULT_AVATAR, getOrCreateProfile } from '../tools/avatar';
 
 export default function Profile() {
 	const { setUser } = useContext(DataContext);
@@ -28,10 +28,7 @@ export default function Profile() {
 		let active = true;
 		async function load() {
 			const userRes = await requestJson('/users');
-			let profileRes = await requestJson('/users/profile');
-			if (profileRes.status === 404) {
-				profileRes = await requestJson('/users/profile', 'POST', { profile_pic: DEFAULT_AVATAR, bio: 'Hello...' });
-			}
+			const profileRes = await getOrCreateProfile(requestJson);
 			if (!active) return;
 			if (!userRes.ok) setLoadError(userRes.data.error);
 			else if (!profileRes.ok) setLoadError(profileRes.data.error);

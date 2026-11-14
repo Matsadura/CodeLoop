@@ -81,6 +81,11 @@ def upgrade():
 
 
 def downgrade():
+    # MySQL drops the implicit foreign-key index on user_id once a unique
+    # index covers that column; recreate a plain index before dropping the
+    # unique constraint so the foreign key keeps an index.
+    with op.batch_alter_table('user_favorites') as batch:
+        batch.create_index('ix_user_favorites_user_id', ['user_id'])
     with op.batch_alter_table('user_favorites') as batch:
         batch.drop_constraint('uq_user_favorites', type_='unique')
     with op.batch_alter_table('solution_results') as batch:
@@ -93,6 +98,8 @@ def downgrade():
         batch.drop_column('status_detail')
         batch.alter_column('status', existing_type=NEW_STATUS,
                            type_=OLD_STATUS, existing_nullable=False)
+    with op.batch_alter_table('user_profile') as batch:
+        batch.create_index('ix_user_profile_user_id', ['user_id'])
     with op.batch_alter_table('user_profile') as batch:
         batch.drop_constraint('uq_user_profile_user_id', type_='unique')
         batch.alter_column('profile_pic', existing_type=sa.String(512),

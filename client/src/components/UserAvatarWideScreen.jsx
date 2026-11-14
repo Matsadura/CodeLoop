@@ -2,7 +2,7 @@ import { Fragment, useContext, useEffect, useState } from 'react';
 import { Menu, Transition } from '@headlessui/react';
 import { Link, useNavigate } from 'react-router-dom';
 import { requestJson } from '../tools/requestModule';
-import { DEFAULT_AVATAR } from '../tools/avatar';
+import { DEFAULT_AVATAR, getOrCreateProfile } from '../tools/avatar';
 import { DataContext } from './dataContext';
 
 
@@ -18,14 +18,8 @@ export default function UserAvatarWideScreen({ userNavigation }) {
 
   useEffect(() => {
     let active = true;
-    requestJson('/users/profile').then(async (res) => {
-      if (res.ok) {
-        if (active && res.data.profile_pic) setPicUrl(res.data.profile_pic);
-      } else if (res.status === 404) {
-        // First visit: create a default profile.
-        const created = await requestJson('/users/profile', 'POST', { profile_pic: DEFAULT_AVATAR, bio: 'Hello...' });
-        if (active && created.ok) setPicUrl(created.data.profile_pic);
-      }
+    getOrCreateProfile(requestJson).then((res) => {
+      if (active && res.ok && res.data.profile_pic) setPicUrl(res.data.profile_pic);
     });
     return () => { active = false; };
   }, []);
