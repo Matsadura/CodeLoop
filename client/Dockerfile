@@ -18,10 +18,13 @@ COPY . .
 ARG VITE_API_BASE_URL=/api
 ARG VITE_APP_NAME=codeLoop
 ARG VITE_DEFAULT_AVATAR=
+# Node sizes its heap from available RAM; small hosts (1 GB) need more for
+# the Monaco bundle, so allow up to NODE_BUILD_MEMORY_MB (swap covers it).
+ARG NODE_BUILD_MEMORY_MB=1536
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL \
     VITE_APP_NAME=$VITE_APP_NAME \
     VITE_DEFAULT_AVATAR=$VITE_DEFAULT_AVATAR
-RUN npm run build
+RUN NODE_OPTIONS="--max-old-space-size=${NODE_BUILD_MEMORY_MB}" npm run build
 
 FROM nginxinc/nginx-unprivileged:1.27-alpine AS prod
 # Where /api requests are proxied (the API service on the compose network).
