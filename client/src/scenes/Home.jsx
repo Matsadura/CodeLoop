@@ -1,12 +1,12 @@
-import { VscError } from "react-icons/vsc";
-import { MdOutlineErrorOutline } from "react-icons/md";
+import { VscError } from 'react-icons/vsc';
+import { MdOutlineErrorOutline } from 'react-icons/md';
 import appFullScreen from '../staticFiles/entireFullScreen.png';
 import executionLogsScreenShot from '../staticFiles/executionLogs.png';
 import createTaskScreenShot from '../staticFiles/createTaskScreenShot.png';
-import { BsMarkdown } from "react-icons/bs";
-import { IoCreateOutline } from "react-icons/io5";
-import { PiTestTubeLight } from "react-icons/pi";
-import { FaRegCheckCircle } from "react-icons/fa";
+import { BsMarkdown } from 'react-icons/bs';
+import { IoCreateOutline } from 'react-icons/io5';
+import { PiTestTubeLight } from 'react-icons/pi';
+import { FaRegCheckCircle } from 'react-icons/fa';
 
 
 const features = [
@@ -87,7 +87,7 @@ export default function Home() {
 						<div className="text-center">
 							<h1 className="text-4xl font-bold tracking-tight text-gray-100 sm:text-5xl md:text-6xl">
 								<span className="block">Master the Art of Writing </span>
-								<span className="block text-crimson-200">"Bugless" code!</span>
+								<span className="block text-crimson-200">&ldquo;Bugless&rdquo; code!</span>
 							</h1>
 							<p className="mx-auto mt-3 max-w-md text-base text-gray-400 sm:text-lg md:mt-5 md:max-w-3xl md:text-xl">
 								An interactive application where coders create challenges, submit solutions, and grow together through shared learning and support.

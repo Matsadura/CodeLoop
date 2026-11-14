@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { request } from '../tools/requestModule';
+import { requestJson } from '../tools/requestModule';
+import PageStatus from '../components/PageStatus';
 import { useNavigate } from 'react-router-dom';
-import { DataContext } from "../components/Context";
-import { useContext } from "react";
+import { DataContext } from '../components/dataContext';
+import { useContext } from 'react';
 
 
 function CatgalogProgress({ catalogTitle, data }) {
@@ -77,25 +78,27 @@ function CatgalogProgress({ catalogTitle, data }) {
 }
 
 function Stats() {
-	const [stats, setStats] = useState({});
+	const [stats, setStats] = useState(null);
+	const [error, setError] = useState('');
 
 	useEffect(() => {
-		const getStats = () => {
-			const request_header = {
-				method: "GET",
-				headers: { "Content-Type": "application/json" },
-			};
-			request(`/users/statistics/categories`, request_header).then((res) => {
-				console.log(res.data);
-				setStats(res.data);
-			}).catch(err => console.error("Error fetching stats:", err));
-		};
-		getStats();
+		let active = true;
+		requestJson('/users/statistics/categories').then((res) => {
+			if (!active) return;
+			if (res.ok) setStats(res.data);
+			else setError(res.data.error);
+		});
+		return () => { active = false; };
 	}, []);
 
+	if (error) return <PageStatus error={error} />;
+	if (!stats) return <PageStatus loading message='Loading your progress...' />;
+	const entries = Object.entries(stats).filter(([, data]) => data.count_submissions > 0);
+	if (!entries.length) return <PageStatus message='Solve your first task to see your progress here.' />;
+
 	return (
-		<div className='px-8 mb-24'>
-			{Object.entries(stats).map(([catalogTitle, data]) => (
+		<div className='px-4 md:px-8 mb-24'>
+			{entries.map(([catalogTitle, data]) => (
 				<CatgalogProgress key={catalogTitle} catalogTitle={catalogTitle} data={data} />
 			))}
 		</div>
@@ -103,15 +106,12 @@ function Stats() {
 }
 
 
-export default function Dashboard({ setNav }) {
-	useEffect(() => {
-		setNav();
-	}, [])
+export default function Dashboard() {
 
 
 	return <div>
 		<UserCreatedTasks />
-		<h1 className='text-gray-50 text-4xl font-bold mb-6 ml-8 mt-12'>Your Progress!</h1>
+		<h1 className='text-gray-50 text-4xl font-bold mb-6 ml-4 md:ml-8 mt-12'>Your Progress!</h1>
 		<Stats />
 
 	</div>
@@ -123,22 +123,16 @@ function UserCreatedTasks() {
 	const { user } = useContext(DataContext);
 
 	useEffect(() => {
-
-		getAllTasks();
-	}, []);
-
-	function getAllTasks() {
-		const request_header = {
-			method: "GET",
-			headers: { "Content-Type": "application/json" },
-		};
-		request(`/tasks`, request_header).then((res) => {
-			setTasks(res.data.filter(t => t.user_id === user.id));
+		if (!user) return;
+		let active = true;
+		requestJson('/tasks').then((res) => {
+			if (active && res.ok) setTasks(res.data.filter(t => t.user_id === user.id));
 		});
-	}
+		return () => { active = false; };
+	}, [user]);
 
 	return tasks.length ? <div className="px-4 sm:px-6 lg:px-8">
-		<div className='grid grid-cols-2'>
+		<div className='grid grid-cols-1 lg:grid-cols-2'>
 			<div className="mt-8 flex flex-col">
 				<h1 className='text-gray-50 text-4xl font-bold mb-6 mt-2'>Your Creations!</h1>
 				<div className="-my-2 -mx-4 overflow-x-auto sm:-mx-6 lg:-mx-8">
@@ -161,7 +155,6 @@ function UserCreatedTasks() {
 											<td className="md:max-w-80 text-nowrap md:text-wrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">
 												<button
 													className='truncate max-w-[400px] text-white hover:text-crimson-200 cursor-pointer text-start'
-													// href={`/tasks/${task.id}`}
 													onClick={() => navigate(`/tasks/${task.id}`)}
 												>
 													{task.title}
@@ -170,7 +163,6 @@ function UserCreatedTasks() {
 											<td className="whitespace-nowrap px-3 py-4 text-sm text-gray-300">
 												<button
 													className='text-white hover:text-crimson-200 cursor-pointer'
-													// href={`/tasks/${task.id}`}
 													onClick={() => navigate(`/task/${task.id}/update`)}
 												>
 													update

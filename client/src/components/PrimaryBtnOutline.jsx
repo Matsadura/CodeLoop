@@ -9,7 +9,7 @@
  */
 export default function PrimaryBtnOutline({ label, action }) {
     return <button
-        type="submit"
+        type="button"
         className="flex w-full justify-center rounded-md border-2 text-sm border-crimson-200 py-2 px-4 font-medium text-crimson-200 shadow-sm hover:border-transparent focus:outline-none focus:ring-blue-100 focus:ring-1"
         onClick={action}
     >

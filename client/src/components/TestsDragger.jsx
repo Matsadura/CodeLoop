@@ -1,12 +1,10 @@
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle, TransitionChild } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import { request } from '../tools/requestModule';
-import { FaTerminal } from 'react-icons/fa6';
-import { useParams } from 'react-router-dom';
+import { requestJson } from '../tools/requestModule';
 import { FaFrog } from 'react-icons/fa6';
 import { GrTest } from 'react-icons/gr';
-import CodeOutput from './CodeOutput';
 import TestCase from './TestCase';
+import PageStatus from './PageStatus';
 import { useEffect, useState } from 'react';
 
 
@@ -15,59 +13,54 @@ import { useEffect, useState } from 'react';
  *
  * @param {boolean} props.open - Indicates if the panel is open.
  * @param {function} props.setOpen - Function to set the open state.
+ * @param {Object} [props.latest] - The latest submission of the user.
+ * @param {number} [props.refreshKey] - Changes when new results are available.
  * @returns {JSX.Element} The draggable panel component with execution logs and test cases.
  */
-export function TestsDragger({ open, setOpen }) {
-  const { taskId } = useParams();
+export function TestsDragger({ open, setOpen, latest, refreshKey }) {
   const [tests, setTests] = useState([]);
-  const [allPass, setAllPass] = useState(false);
-  const [allFail, setFail] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const latestId = latest?.id;
+  const graded = latest && (latest.status === 'correct' || latest.status === 'incorrect');
 
   useEffect(() => {
-    if (open) getLastSubmission();
-  }, [open]);
-
-  function getLastSubmission() {
-    const request_header = {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-    };
-    request(`/tasks/${taskId}/submissions`, request_header).then((res) => {
-      if (res.data.length === 0)
-        console.log('empty tests');
+    if (!open || !latestId || !graded) return;
+    let active = true;
+    setLoading(true);
+    setError('');
+    requestJson(`/submissions/${latestId}/results`).then((res) => {
+      if (!active) return;
+      if (res.ok && Array.isArray(res.data)) setTests(res.data);
       else {
-        res.data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-        getTests(res.data[0].id);
+        setTests([]);
+        setError(res.data.error);
       }
+      setLoading(false);
     });
-  }
+    return () => { active = false; };
+  }, [open, latestId, graded, refreshKey]);
 
-  function getTests(submitionId) {
-    const request_header = {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-    };
-    request(`/submissions/${submitionId}/results`, request_header).then((res) => {
-      if (res.data.error) setTests(null);
-      else setTests(res.data);
-    });
-  }
+  let body;
+  if (!latest) body = <PageStatus message='Please submit your first code...' />;
+  else if (latest.status === 'pending') body = <PageStatus loading message='Your code is still running...' />;
+  else if (latest.status === 'error') body = <PageStatus error={latest.status_detail || 'Your last submission could not be executed. Please submit again.'} />;
+  else if (loading) body = <PageStatus loading message='Loading results...' />;
+  else if (error) body = <PageStatus error={error} />;
+  else body = tests.map((test) => <TestCase key={test.id} test={test} />);
 
   return <Dragger
     open={open}
     setOpen={setOpen}
     title={
       <div className='flex items-center gap-4'>
-        <FaFrog className='text-3xl' />
+        <FaFrog className='text-3xl' aria-hidden='true' />
         Execution Logs
       </div>
     }
   >
-    <h4 className='text-base font-semibold leading-6 text-gray-50 mb-6 flex items-center gap-2'><GrTest />Test cases your code will need to pass</h4>
-    {tests ? tests.map((test) => {
-      return <TestCase key={test.id} test={test} />
-    }) : <div className='text-white'>Please submit your first code...</div>}
-
+    <h2 className='text-base font-semibold leading-6 text-gray-50 mb-6 flex items-center gap-2'><GrTest aria-hidden='true' />Test cases your code will need to pass</h2>
+    {body}
   </Dragger>
 }
 
@@ -83,7 +76,7 @@ export function TestsDragger({ open, setOpen }) {
  */
 export default function Dragger({ open, setOpen, title, children }) {
   return (
-    <Dialog open={open} onClose={setOpen} className="relative z-10 text-sm">
+    <Dialog open={open} onClose={() => setOpen(false)} className="relative z-10 text-sm">
       <DialogBackdrop
         transition
         className="fixed inset-0 bg-violet-300 bg-opacity-75 transition-opacity duration-500 ease-in-out data-[closed]:opacity-0"
