@@ -5,6 +5,7 @@
     python manage.py wait-db        block until the database accepts queries
     python manage.py migrate        apply database migrations (Alembic)
     python manage.py seed           create demo data (idempotent)
+    python manage.py check-schema   fail if the database differs from models
 
 All commands read the same environment variables as the API.
 """
@@ -86,6 +87,28 @@ def migrate(_args):
     print('Database schema is up to date')
 
 
+def check_schema(_args):
+    """Compare the live schema with the SQLAlchemy models (used in CI)"""
+    from alembic.autogenerate import compare_metadata
+    from alembic.migration import MigrationContext
+    import models.engine.db_storage  # noqa: F401  (registers every model)
+    from models.base_model import Base
+
+    settings = _settings()
+    storage.configure(settings.database_url)
+    with storage.engine.connect() as connection:
+        context = MigrationContext.configure(
+            connection, opts={'compare_type': True})
+        diff = compare_metadata(context, Base.metadata)
+    for item in diff:
+        print(item)
+    if diff:
+        print(f'Schema differs from models ({len(diff)} differences)',
+              file=sys.stderr)
+        sys.exit(1)
+    print('Schema matches the models')
+
+
 def seed(_args):
     """Create a demo account, a category, a task and its test cases"""
     from models.category import Category
@@ -153,6 +176,7 @@ def main(argv=None):
     wait.set_defaults(func=wait_db)
     sub.add_parser('migrate').set_defaults(func=migrate)
     sub.add_parser('seed').set_defaults(func=seed)
+    sub.add_parser('check-schema').set_defaults(func=check_schema)
     args = parser.parse_args(argv)
     args.func(args)
 
