@@ -15,6 +15,8 @@ from sqlalchemy.exc import ArgumentError
 ENVIRONMENTS = ('development', 'testing', 'production')
 DEFAULT_DEV_ORIGINS = 'http://localhost:3000,http://127.0.0.1:3000'
 DEFAULT_LANGUAGE_IDS = 'python=71,c=50'
+DEFAULT_PISTON_LANGUAGES = 'python=python:3.12.0'
+CODE_RUNNERS = ('judge0', 'piston')
 MIN_PRODUCTION_SECRET_LENGTH = 32
 
 
@@ -49,6 +51,21 @@ class Judge0Settings:
 
 
 @dataclass(frozen=True)
+class PistonSettings:
+    """Settings for a self-hosted Piston code execution engine."""
+    url: str
+    # CodeLoop language -> (Piston language, version selector)
+    languages: Dict[str, Tuple[str, str]] = field(default_factory=dict)
+    request_timeout: float = 20.0
+    max_retries: int = 1
+    run_timeout_ms: int = 3000
+    compile_timeout_ms: int = 10000
+    memory_limit_bytes: int = 128 * 1024 * 1024
+    concurrency: int = 4
+    total_timeout: float = 45.0
+
+
+@dataclass(frozen=True)
 class Settings:
     """Validated application settings."""
     env: str
@@ -57,6 +74,8 @@ class Settings:
     jwt_access_token_expires: timedelta
     cors_origins: Tuple[str, ...]
     judge0: Judge0Settings
+    code_runner: str = 'judge0'
+    piston: Optional[PistonSettings] = None
     max_content_length: int = 1024 * 1024
     log_level: str = 'INFO'
 
@@ -121,6 +140,38 @@ def parse_language_ids(raw: str) -> Dict[str, int]:
     if not result:
         raise ValueError(raw)
     return result
+
+
+def parse_piston_languages(raw: str) -> Dict[str, Tuple[str, str]]:
+    """Parse ``python=python:3.12.0`` into ``{'python': ('python',
+    '3.12.0')}``; the version may be a semver selector such as ``3.x``."""
+    result = {}
+    for item in raw.split(','):
+        item = item.strip()
+        if not item:
+            continue
+        name, sep, target = item.partition('=')
+        language, colon, version = target.partition(':')
+        if not sep or not colon or not name.strip() or \
+                not language.strip() or not version.strip():
+            raise ValueError(item)
+        result[name.strip().lower()] = (language.strip(), version.strip())
+    if not result:
+        raise ValueError(raw)
+    return result
+
+
+def _url(env, name, default, required, errors):
+    value = _get(env, name)
+    if value is None:
+        value = default
+    if not value:
+        if required:
+            errors.append(f'{name} is required')
+        return ''
+    if not value.startswith(('http://', 'https://')):
+        errors.append(f'{name} must start with http:// or https://')
+    return value.rstrip('/')
 
 
 def _database_url(env, errors) -> str:
@@ -194,13 +245,14 @@ def load_settings(env: Optional[Mapping[str, str]] = None) -> Settings:
         errors.append('CORS_ORIGINS must be an explicit allowlist in '
                       'production ("*" is not allowed)')
 
-    judge0_url = _get(env, 'JUDGE0_URL')
-    if judge0_url is None and not production:
-        judge0_url = 'http://localhost:2358'
-    if not judge0_url:
-        errors.append('JUDGE0_URL is required')
-    elif not judge0_url.startswith(('http://', 'https://')):
-        errors.append('JUDGE0_URL must start with http:// or https://')
+    code_runner = (_get(env, 'CODE_RUNNER') or 'judge0').lower()
+    if code_runner not in CODE_RUNNERS:
+        errors.append(f'CODE_RUNNER must be one of {", ".join(CODE_RUNNERS)}')
+        code_runner = 'judge0'
+
+    judge0_url = _url(env, 'JUDGE0_URL',
+                      None if production else 'http://localhost:2358',
+                      code_runner == 'judge0', errors)
 
     try:
         language_ids = parse_language_ids(
@@ -210,7 +262,7 @@ def load_settings(env: Optional[Mapping[str, str]] = None) -> Settings:
         language_ids = parse_language_ids(DEFAULT_LANGUAGE_IDS)
 
     judge0 = Judge0Settings(
-        url=(judge0_url or '').rstrip('/'),
+        url=judge0_url,
         auth_token=_get(env, 'JUDGE0_AUTH_TOKEN'),
         rapidapi_key=_get(env, 'JUDGE0_RAPIDAPI_KEY'),
         rapidapi_host=_get(env, 'JUDGE0_RAPIDAPI_HOST'),
@@ -223,6 +275,36 @@ def load_settings(env: Optional[Mapping[str, str]] = None) -> Settings:
         batch_size=_get_int(env, 'JUDGE0_BATCH_SIZE', 20, 1, errors),
         language_ids=language_ids,
     )
+
+    piston = None
+    if code_runner == 'piston':
+        piston_url = _url(env, 'PISTON_URL',
+                          None if production else 'http://localhost:2000',
+                          True, errors)
+        try:
+            piston_languages = parse_piston_languages(
+                _get(env, 'PISTON_LANGUAGES') or DEFAULT_PISTON_LANGUAGES)
+        except ValueError:
+            errors.append('PISTON_LANGUAGES must look like '
+                          '"python=python:3.12.0"')
+            piston_languages = parse_piston_languages(
+                DEFAULT_PISTON_LANGUAGES)
+        piston = PistonSettings(
+            url=piston_url,
+            languages=piston_languages,
+            request_timeout=_get_float(env, 'PISTON_REQUEST_TIMEOUT', 20.0,
+                                       0.1, errors),
+            max_retries=_get_int(env, 'PISTON_MAX_RETRIES', 1, 0, errors),
+            run_timeout_ms=_get_int(env, 'PISTON_RUN_TIMEOUT_MS', 3000, 100,
+                                    errors),
+            compile_timeout_ms=_get_int(env, 'PISTON_COMPILE_TIMEOUT_MS',
+                                        10000, 100, errors),
+            memory_limit_bytes=_get_int(env, 'PISTON_MEMORY_LIMIT_BYTES',
+                                        128 * 1024 * 1024, -1, errors),
+            concurrency=_get_int(env, 'PISTON_CONCURRENCY', 4, 1, errors),
+            total_timeout=_get_float(env, 'PISTON_TOTAL_TIMEOUT', 45.0, 1,
+                                     errors),
+        )
 
     max_content_length = _get_int(env, 'MAX_CONTENT_LENGTH', 1024 * 1024,
                                   1024, errors)
@@ -239,6 +321,8 @@ def load_settings(env: Optional[Mapping[str, str]] = None) -> Settings:
         jwt_access_token_expires=timedelta(hours=expires_hours),
         cors_origins=origins,
         judge0=judge0,
+        code_runner=code_runner,
+        piston=piston,
         max_content_length=max_content_length,
         log_level=log_level,
     )

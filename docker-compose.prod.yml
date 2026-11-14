@@ -2,7 +2,8 @@
 # Nginx serving the built frontend and proxying /api.
 #   cp .env.production.example .env.production   # fill in real secrets
 #   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
-# Judge0 is external: point JUDGE0_URL at your Judge0 VM or hosted Judge0.
+# Code execution: Judge0 is external (JUDGE0_URL), or use Piston on the same
+# host with deploy/docker-compose.vps.yml (CODE_RUNNER=piston).
 name: codeloop-prod
 
 services:
@@ -37,7 +38,9 @@ services:
       CODE_DB_NAME: ${MYSQL_DATABASE:-CODE_DB}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:?set JWT_SECRET_KEY}
       CORS_ORIGINS: ${CORS_ORIGINS:-}
-      JUDGE0_URL: ${JUDGE0_URL:?set JUDGE0_URL}
+      CODE_RUNNER: ${CODE_RUNNER:-judge0}
+      PISTON_URL: ${PISTON_URL:-}
+      JUDGE0_URL: ${JUDGE0_URL:-}
       JUDGE0_AUTH_TOKEN: ${JUDGE0_AUTH_TOKEN:-}
       JUDGE0_RAPIDAPI_KEY: ${JUDGE0_RAPIDAPI_KEY:-}
       JUDGE0_RAPIDAPI_HOST: ${JUDGE0_RAPIDAPI_HOST:-}

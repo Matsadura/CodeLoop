@@ -7,9 +7,9 @@ CodeLoop has four runtime pieces with very different hosting needs:
 | Frontend | Static files (or the Nginx image) | Any static host or container platform |
 | API | A long-running container (Gunicorn) | Container PaaS |
 | MySQL 8 | Persistent storage and backups | Managed MySQL |
-| Judge0 | **Privileged** Docker, cgroup v1, Postgres and Redis | Its own VM, or hosted Judge0 |
+| Code runner | Piston: **privileged** Docker and cgroup v2. Judge0: **privileged** Docker, cgroup v1, Postgres and Redis | The app's own server (Piston), its own VM, or hosted Judge0 |
 
-Judge0 is the deciding constraint. It runs untrusted code in a privileged sandbox, which serverless platforms and ordinary PaaS containers do not allow. Production therefore keeps Judge0 **outside** the PaaS.
+Code execution is the deciding constraint. Judge0 and Piston both run untrusted code in a privileged sandbox, which serverless platforms and ordinary PaaS containers do not allow. Production therefore runs the sandbox on a server you control: either a Judge0 VM next to a PaaS (option A), or Piston on the same single server as the app (option B, the cheapest).
 
 ## Option A (recommended): Railway + a Judge0 VM
 
@@ -80,7 +80,12 @@ docker compose -f docker-compose.prod.yml --env-file .env.production up -d --bui
 ```
 
 - The web container listens on `${WEB_PORT:-8080}`. Put a TLS terminator such as Caddy, Traefik or a cloud load balancer in front of it, or use the bundled overlay described below.
-- **Small VPS with automatic HTTPS:** [`deploy/docker-compose.vps.yml`](../deploy/docker-compose.vps.yml) adds Caddy, which gets a Let's Encrypt certificate for `DOMAIN`, and tunes MySQL and Gunicorn for about 1 GB of RAM. Point the domain's DNS at the server, open ports 80 and 443, set `DOMAIN` in `.env.production`, then run:
+- **Small VPS with automatic HTTPS and code execution:** [`deploy/docker-compose.vps.yml`](../deploy/docker-compose.vps.yml) adds Caddy, which gets a Let's Encrypt certificate for `DOMAIN`. It also adds a private Piston sandbox for running code (amd64 or arm64), and tunes MySQL and Gunicorn for about 1 GB of RAM. Piston needs pure cgroup v2. On Ubuntu 20.04, enable it once:
+  ```bash
+  sudo sed -i 's/^GRUB_CMDLINE_LINUX="\(.*\)"/GRUB_CMDLINE_LINUX="\1 systemd.unified_cgroup_hierarchy=1"/' /etc/default/grub
+  sudo update-grub && sudo reboot
+  # after reboot: stat -fc %T /sys/fs/cgroup  ->  cgroup2fs
+  ``` Point the domain's DNS at the server, open ports 80 and 443, set `DOMAIN` in `.env.production`, then run:
   ```bash
   docker compose -f docker-compose.prod.yml -f deploy/docker-compose.vps.yml \
     --env-file .env.production up -d --build
@@ -96,8 +101,10 @@ docker compose -f docker-compose.prod.yml --env-file .env.production up -d --bui
 | API | `APP_ENV=production` | Default when unset |
 | API | `DATABASE_URL` *or* `CODE_DB_HOST`/`CODE_DB_USER`/`CODE_DB_PASSWORD`/`CODE_DB_NAME` | |
 | API | `JWT_SECRET_KEY` | ≥ 32 characters, random |
-| API | `JUDGE0_URL` | HTTPS URL of Judge0 |
-| API | `JUDGE0_AUTH_TOKEN` or `JUDGE0_RAPIDAPI_KEY` | Effectively required, since Judge0 must not be open |
+| API | `CODE_RUNNER` | `piston` (single server) or `judge0` |
+| API | `PISTON_URL` | With Piston; the VPS overlay sets `http://piston:2000` |
+| API | `JUDGE0_URL` | With Judge0: HTTPS URL of Judge0 |
+| API | `JUDGE0_AUTH_TOKEN` or `JUDGE0_RAPIDAPI_KEY` | With Judge0: effectively required, since Judge0 must not be open |
 | API | `CORS_ORIGINS` | Only when the frontend is on another origin |
 | Web image | `API_UPSTREAM` | Where Nginx proxies `/api` |
 | Web build | `VITE_API_BASE_URL` | Defaults to `/api` |

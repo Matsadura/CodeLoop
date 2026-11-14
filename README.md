@@ -9,7 +9,7 @@
 [![Flask](https://img.shields.io/badge/Flask-3-000000?logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
 [![MySQL](https://img.shields.io/badge/MySQL-8-4479A1?logo=mysql&logoColor=white)](https://www.mysql.com/)
 
-CodeLoop lets users create coding challenges (a Markdown description plus input/expected-output test cases), group them into catalogs, and solve each other's challenges in a browser-based Monaco editor. Submissions are run in a [Judge0](https://judge0.com/) sandbox against every test case, and users see per-test results and track their progress per catalog.
+CodeLoop lets users create coding challenges (a Markdown description plus input/expected-output test cases), group them into catalogs, and solve each other's challenges in a browser-based Monaco editor. Submissions are run in a sandbox, either a self-hosted [Piston](https://github.com/engineer-man/piston) or [Judge0](https://judge0.com/), against every test case, and users see per-test results and track their progress per catalog.
 
 ## Contents
 
@@ -19,7 +19,7 @@ CodeLoop lets users create coding challenges (a Markdown description plus input/
 - [Running without Docker](#running-without-docker)
 - [Configuration](#configuration)
 - [Database](#database)
-- [Judge0 (code execution)](#judge0-code-execution)
+- [Code execution (Piston or Judge0)](#code-execution-piston-or-judge0)
 - [Tests and quality checks](#tests-and-quality-checks)
 - [Deployment](#deployment)
 - [API overview](#api-overview)
@@ -32,7 +32,7 @@ CodeLoop lets users create coding challenges (a Markdown description plus input/
 - **Catalogs:** themed groups of tasks with a difficulty level and a cover image.
 - **Task authoring:** Markdown descriptions and any number of test cases (up to 50). Only a task's author can edit or delete it, or view its test cases.
 - **In-browser editor:** a Monaco-based workspace with a split view on desktop and tabbed panels on mobile.
-- **Graded submissions:** code runs against every test case in Judge0. Each test case is reported as pass, fail or error, with stdout, stderr and compiler output.
+- **Graded submissions:** code runs against every test case in Piston or Judge0. Each test case is reported as pass, fail or error, with stdout, stderr and compiler output. Time-limit and memory-limit kills are explained in plain words.
 - **Favorites and progress:** like tasks, sort them by likes, and see your success rate per catalog on the dashboard.
 
 ## Architecture
@@ -42,7 +42,7 @@ flowchart LR
     B[Browser<br/>React + Vite SPA] -->|HTTPS /api| N[Nginx<br/>static files + reverse proxy]
     N -->|/api| A[Flask API<br/>Gunicorn]
     A -->|SQLAlchemy / PyMySQL| M[(MySQL 8)]
-    A -->|HTTPS batch API<br/>timeouts + retries| J[Judge0 CE<br/>separate VM or hosted]
+    A -->|HTTP, timeouts + retries<br/>CODE_RUNNER| J[Piston on the same host<br/>or Judge0 VM / hosted]
 ```
 
 | Part | Location | Stack |
@@ -50,17 +50,22 @@ flowchart LR
 | Frontend | [`client/`](client) | React 18, Vite 5, Tailwind CSS, React Router 6, Monaco Editor, Vitest |
 | API | [`server/api/`](server/api) | Flask 3 app factory, Flask-JWT-Extended, Flask-CORS, Gunicorn |
 | Data layer | [`server/models/`](server/models) | SQLAlchemy 2 models + `DBStorage` facade, Alembic migrations in [`server/migrations/`](server/migrations) |
-| Code execution | [`server/api/judge0.py`](server/api/judge0.py), [`server/api/grading.py`](server/api/grading.py), [`judge0/`](judge0) | Judge0 CE 1.13.1 batch API |
+| Code execution | [`server/api/piston.py`](server/api/piston.py), [`server/api/judge0.py`](server/api/judge0.py), [`server/api/grading.py`](server/api/grading.py), [`piston/`](piston), [`judge0/`](judge0) | Self-built Piston (amd64 and arm64) or Judge0 CE 1.13.1 |
 | Orchestration | [`docker-compose.yml`](docker-compose.yml) (dev), [`docker-compose.prod.yml`](docker-compose.prod.yml) | Docker Compose |
 | CI | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) | GitHub Actions |
 
-**How a submission is graded.** `POST /api/tasks/<id>/submit` stores the submission as `pending` and sends every test case to Judge0 in a single batch request. The API then waits for results for at most `JUDGE0_SYNC_WAIT` seconds:
+**How a submission is graded.** `POST /api/tasks/<id>/submit` stores the submission as `pending`, then runs it with the runner chosen by `CODE_RUNNER`:
+
+- **Piston** runs each test case right away, a few in parallel, and the API compares the output with the expected output, ignoring trailing whitespace. The whole submission has a time budget (`PISTON_TOTAL_TIMEOUT`), and the answer is normally 201.
+- **Judge0** receives every test case in a single batch request, and the API waits for results for at most `JUDGE0_SYNC_WAIT` seconds.
+
+The possible responses are:
 
 - **201:** the submission was graded as `correct` or `incorrect`.
-- **202:** Judge0 is still running. The client polls `GET /api/submissions/<id>`, and each poll fetches fresh results from Judge0.
-- **503:** Judge0 could not be reached. The submission is kept with status `error` and a `status_detail` explaining why, and the user can resubmit.
+- **202 (Judge0 only):** Judge0 is still running. The client polls `GET /api/submissions/<id>`, and each poll fetches fresh results from Judge0.
+- **503:** the code runner could not be reached. The submission is kept with status `error` and a `status_detail` explaining why, and the user can resubmit.
 
-Every Judge0 call has a request timeout and a bounded number of retries, so an API request can never hang forever.
+Every call to either runner has a request timeout and a bounded number of retries, so an API request can never hang forever.
 
 ## Quick start (Docker)
 
@@ -88,7 +93,13 @@ docker compose exec -e SEED_USER_PASSWORD='choose-a-password' api python manage.
 # log in as demo@codeloop.dev (override with SEED_USER_EMAIL)
 ```
 
-**Code execution** needs Judge0, which runs as its own Compose project. See [Judge0](#judge0-code-execution). Without it, the rest of the app works normally and submissions report that the execution service is unavailable.
+**Code execution** needs a runner. The easiest one locally is Piston (it needs a host with cgroup v2, such as WSL2 or Ubuntu 22.04+):
+
+```bash
+CODE_RUNNER=piston docker compose --profile piston up --build
+```
+
+The first build compiles Python 3.12 and takes several minutes. See [Code execution](#code-execution-piston-or-judge0) for Judge0. Without a runner, the rest of the app works normally and submissions report that the execution service is unavailable.
 
 > On Docker Desktop for Windows/WSL bind mounts, set `CHOKIDAR_USEPOLLING=true` in `.env` if hot reload does not pick up changes.
 
@@ -131,7 +142,13 @@ The API validates all of its settings at startup (`python manage.py check-config
 | `JWT_SECRET_KEY` | **yes** | – | Must be at least 32 characters in production. |
 | `JWT_ACCESS_TOKEN_EXPIRES_HOURS` | no | `24` | Token lifetime. |
 | `CORS_ORIGINS` | no | dev: `http://localhost:3000,http://127.0.0.1:3000`; prod: none | Comma-separated allowlist. `*` is rejected in production. Leave it empty when the frontend is served from the same origin. |
-| `JUDGE0_URL` | **yes** in prod | dev: `http://localhost:2358` | Base URL of the Judge0 API. |
+| `CODE_RUNNER` | no | `judge0` | `piston` or `judge0`. |
+| `PISTON_URL` | **yes** with Piston in prod | dev: `http://localhost:2000` | Base URL of Piston. |
+| `PISTON_LANGUAGES` | no | `python=python:3.12.0` | CodeLoop language → Piston `language:version`. |
+| `PISTON_RUN_TIMEOUT_MS`, `PISTON_COMPILE_TIMEOUT_MS` | no | `3000`, `10000` | Per test case limits. |
+| `PISTON_MEMORY_LIMIT_BYTES` | no | `134217728` (128 MB) | Per test case memory limit. |
+| `PISTON_CONCURRENCY`, `PISTON_TOTAL_TIMEOUT`, `PISTON_REQUEST_TIMEOUT`, `PISTON_MAX_RETRIES` | no | `4`, `45`, `20`, `1` | Test cases run in parallel, the time budget per submission in seconds, the HTTP timeout, and connection retries. |
+| `JUDGE0_URL` | **yes** with Judge0 in prod | dev: `http://localhost:2358` | Base URL of the Judge0 API. |
 | `JUDGE0_AUTH_TOKEN` | no | – | Sent as `X-Auth-Token`; must match `AUTHN_TOKEN` in `judge0.conf`. |
 | `JUDGE0_RAPIDAPI_KEY`, `JUDGE0_RAPIDAPI_HOST` | no | – | For hosted Judge0 CE on RapidAPI. |
 | `JUDGE0_REQUEST_TIMEOUT` | no | `10` | Seconds per HTTP call to Judge0. |
@@ -172,7 +189,21 @@ The production web image also reads `API_UPSTREAM` (default `http://api:5000`), 
 
   Copy the dumps off the host. Run them nightly, keep several days, and test a restore.
 
-## Judge0 (code execution)
+## Code execution (Piston or Judge0)
+
+Both runners execute untrusted code inside the `isolate` sandbox, so both need **privileged containers**. Neither can run on serverless or ordinary PaaS platforms.
+
+### Piston (recommended for a single server)
+
+[`piston/Dockerfile`](piston/Dockerfile) builds Piston from source at a pinned commit, with Python 3.12 compiled for the host's architecture. It works on **amd64 and arm64**, for example AWS Graviton; the official Piston image is amd64-only. Piston is a single Node.js service with no database, so it fits next to the app on a 1 GB server.
+
+- **Host requirement:** pure **cgroup v2**. This is the default on Ubuntu 22.04+, Debian 11+ and WSL2. On Ubuntu 20.04, add `systemd.unified_cgroup_hierarchy=1` to `GRUB_CMDLINE_LINUX` in `/etc/default/grub`, then run `sudo update-grub` and reboot.
+- **Sandbox defaults:** 3 s per test case, 128 MB of memory, networking disabled, and output capped at 64 KB.
+- **Exposure:** the container is never published to the internet; only the API reaches it.
+- **Local dev:** `CODE_RUNNER=piston docker compose --profile piston up --build`. **Production:** [`deploy/docker-compose.vps.yml`](deploy/docker-compose.vps.yml) enables it.
+- **Adding a language:** add a build stage to `piston/Dockerfile` that installs the runtime as a Piston package, then extend `PISTON_LANGUAGES`.
+
+### Judge0
 
 Judge0 CE runs untrusted code inside the `isolate` sandbox. It needs **privileged containers** and, for version 1.13.1, a Linux host with **cgroup v1**. It therefore cannot run on serverless or ordinary PaaS platforms, and it will not run on a default Ubuntu 22.04+/WSL2 kernel, which uses cgroup v2.
 
@@ -205,7 +236,7 @@ Language IDs depend on the Judge0 version; adjust `JUDGE0_LANGUAGE_IDS` to match
 | Command | Directory | What it checks |
 | --- | --- | --- |
 | `flake8` | `server/` | Python style and errors |
-| `python -m pytest -q` | `server/` | 45 API tests (auth, authorization, validation, health, config, submissions with a mocked Judge0, migrations vs. models), with warnings treated as errors |
+| `python -m pytest -q` | `server/` | 60 API tests (auth, authorization, validation, health, config, submissions with mocked Piston and Judge0, migrations vs. models), with warnings treated as errors |
 | `python manage.py check-schema` | `server/` | Live database schema matches the models |
 | `npm run lint` | `client/` | ESLint with zero warnings allowed |
 | `npm test` | `client/` | Vitest: API client error handling, session expiry, protected routes, form validation |
@@ -218,7 +249,7 @@ CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs all of the abov
 See **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)** for step-by-step instructions. In short:
 
 - **Recommended:** [Railway](https://railway.app) for the API container, the web container and managed MySQL, plus Judge0 on a small VM.
-- **Alternative:** a single Docker host running `docker-compose.prod.yml`, with Judge0 alongside it or on its own VM.
+- **Single server:** one Docker host running `docker-compose.prod.yml` with the `deploy/docker-compose.vps.yml` overlay, which adds Caddy HTTPS and Piston. This is how the live demo runs, on a 1 GB arm64 VM.
 
 The production images use Gunicorn behind unprivileged Nginx. They have health checks, no development bind mounts, and do not publish the database port.
 
@@ -237,7 +268,7 @@ All routes are under `/api`. Every route except `status`, `health`, `stats`, `re
 | `GET/POST /categories`, `GET /categories/<id>/tasks` | Catalogs and their tasks |
 | `GET/POST /tasks`, `GET/PUT/DELETE /tasks/<id>` | Tasks; changes are limited to the author |
 | `GET/POST /tasks/<id>/test_cases`, `GET/PUT/DELETE /tasks/<id>/test_cases/<tc>` | Test cases, author only |
-| `POST /tasks/<id>/submit` | Submit code: 201 graded, 202 pending, 503 Judge0 unavailable |
+| `POST /tasks/<id>/submit` | Submit code: 201 graded, 202 pending (Judge0 only), 503 runner unavailable |
 | `GET /tasks/<id>/submissions`, `GET /submissions/<id>`, `GET /submissions/<id>/results` | Your own submissions and their per-test results |
 
 ## Security notes
@@ -249,13 +280,13 @@ All routes are under `/api`. Every route except `status`, `health`, `stats`, `re
 - The Flask debugger never runs outside `APP_ENV=development`. Errors are returned as generic JSON, without stack traces or SQL.
 - Every write route validates its input and accepts only an explicit list of fields, so clients cannot set ids, owners or timestamps. Authors alone can change their tasks and test cases, and submissions and results are visible only to their owner.
 - Nginx rate-limits `/api/login` and `/api/register` (10 requests/minute per IP, burst 5), and sets basic security headers.
-- Judge0 executes arbitrary code. Never expose it without `AUTHN_TOKEN` and TLS.
+- Piston and Judge0 execute arbitrary code. Keep Piston unpublished, and never expose Judge0 without `AUTHN_TOKEN` and TLS. Both run privileged, so a sandbox escape would reach the host. Keep the host patched, and prefer a dedicated server when you can.
 
 ## Known limitations
 
 - There are no roles: any signed-in user can create catalogs, and catalogs cannot be edited or deleted through the API.
 - Tasks are kept when their author deletes their account, and can no longer be edited after that.
-- The editor submits Python only. The backend also accepts `c` if Judge0 supports it, but the UI does not offer it yet.
+- The editor submits Python only. The backend also accepts `c` if the runner supports it, but the UI does not offer it yet, and the bundled Piston image includes only Python.
 - Rate limiting happens only in the bundled Nginx. If you deploy the API without it, add rate limiting at your edge.
 - Grading is synchronous up to `JUDGE0_SYNC_WAIT`, then the client polls. Very heavy workloads would benefit from a job queue.
 - The JWT is stored in `localStorage`, where an XSS bug could read it. Task descriptions are rendered with `react-markdown`, which does not render raw HTML.
@@ -266,7 +297,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Acknowledgments
 
-- [Judge0](https://github.com/judge0/judge0) for sandboxed code execution.
+- [Piston](https://github.com/engineer-man/piston) and [Judge0](https://github.com/judge0/judge0) for sandboxed code execution.
 
 ---
 

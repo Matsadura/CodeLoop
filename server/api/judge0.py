@@ -8,6 +8,7 @@ import base64
 import logging
 
 import requests
+from api.execution import ExecutionError, ExecutionUnavailable
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
@@ -23,12 +24,9 @@ PENDING_STATUSES = (STATUS_IN_QUEUE, STATUS_PROCESSING)
 RESULT_FIELDS = 'token,stdout,stderr,compile_output,message,status,time'
 
 
-class Judge0Error(Exception):
-    """The execution service returned an unexpected response"""
-
-
-class Judge0Unavailable(Judge0Error):
-    """The execution service could not be reached or is overloaded"""
+# Kept as aliases so existing imports keep working.
+Judge0Error = ExecutionError
+Judge0Unavailable = ExecutionUnavailable
 
 
 def _b64encode(value):
@@ -48,6 +46,9 @@ def _b64decode(value):
 
 class Judge0Client:
     """Thin wrapper around the Judge0 batch submission endpoints"""
+
+    # Executions are queued and polled (see api.grading).
+    synchronous = False
 
     def __init__(self, settings, session=None):
         self.settings = settings
@@ -97,6 +98,10 @@ class Judge0Client:
     def language_id(self, language):
         """Judge0 language id for ``language`` or None if unsupported"""
         return self.settings.language_ids.get(language)
+
+    def supported_languages(self):
+        """CodeLoop language names this backend can run"""
+        return set(self.settings.language_ids)
 
     def submit_batch(self, items):
         """Create executions; ``items`` are dicts with ``source_code``,

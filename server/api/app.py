@@ -11,6 +11,7 @@ import sys
 from api.config import ConfigError, load_settings
 from api.errors import register_error_handlers
 from api.judge0 import Judge0Client
+from api.piston import PistonClient
 from api.views import app_views
 from api.views.auth import jwt
 from dotenv import load_dotenv
@@ -43,7 +44,12 @@ def create_app(settings=None):
         DEBUG=False,
     )
     app.extensions['codeloop_settings'] = settings
-    app.extensions['judge0_client'] = Judge0Client(settings.judge0)
+    if settings.code_runner == 'piston':
+        runner = PistonClient(settings.piston)
+    else:
+        runner = Judge0Client(settings.judge0)
+    # 'judge0_client' is kept as the extension name for compatibility.
+    app.extensions['judge0_client'] = runner
 
     storage.configure(settings.database_url)
     jwt.init_app(app)

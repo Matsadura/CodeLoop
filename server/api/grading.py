@@ -1,6 +1,9 @@
 """Grade submissions by running them against a task's test cases.
 
-Flow:
+With Piston (CODE_RUNNER=piston) every test case is executed immediately
+and the submission is graded inside ``start``.
+
+With Judge0 the flow is:
 1. ``start`` sends every test case to Judge0 in one batch and stores the
    returned tokens on the submission (status ``pending``).
 2. ``refresh`` fetches the batch results once; when every execution has
@@ -19,8 +22,8 @@ import json
 import logging
 import time
 
-from api.judge0 import (PENDING_STATUSES, STATUS_ACCEPTED,
-                        STATUS_WRONG_ANSWER, Judge0Error, Judge0Unavailable)
+from api.execution import ExecutionError, ExecutionUnavailable
+from api.judge0 import PENDING_STATUSES, STATUS_ACCEPTED, STATUS_WRONG_ANSWER
 from models import storage
 from models.solution_result import Solution_Result
 from models.submission import Submission
@@ -50,8 +53,47 @@ def _stderr(result):
     return text or None
 
 
+def _fail(submission, detail):
+    submission.status = 'error'
+    submission.status_detail = detail[:255]
+    storage.save()
+    return False
+
+
+def _grade_now(client, submission, test_cases):
+    """Synchronous backends (Piston): run, store results, grade."""
+    try:
+        results = client.run_test_cases(submission.language,
+                                        submission.code, test_cases)
+    except ExecutionUnavailable:
+        return _fail(submission, UNAVAILABLE_DETAIL)
+    except ExecutionError as error:
+        return _fail(submission, str(error))
+    all_passed = True
+    for tc, result in zip(test_cases, results):
+        all_passed = all_passed and result['status'] == 'pass'
+        storage.new(Solution_Result(
+            submission_id=submission.id,
+            task_test_case_id=tc.id,
+            stdin=tc.input,
+            expected_output=tc.expected_output,
+            status=result['status'],
+            stdout=result['stdout'],
+            stderr=result['stderr'],
+            time=result['time'],
+        ))
+    submission.status = 'correct' if all_passed else 'incorrect'
+    submission.status_detail = None
+    submission.touch()
+    storage.save()
+    return True
+
+
 def start(client, submission, test_cases):
-    """Send ``submission`` to Judge0. Commits the submission state."""
+    """Run ``submission`` (Piston) or queue it on Judge0. Commits the
+    submission state; returns False if the code could not be executed."""
+    if client.synchronous:
+        return _grade_now(client, submission, test_cases)
     language_id = client.language_id(submission.language)
     items = [{
         'source_code': submission.code,
@@ -61,12 +103,12 @@ def start(client, submission, test_cases):
     } for tc in test_cases]
     try:
         tokens = client.submit_batch(items)
-    except Judge0Unavailable:
+    except ExecutionUnavailable:
         submission.status = 'error'
         submission.status_detail = UNAVAILABLE_DETAIL
         storage.save()
         return False
-    except Judge0Error as error:
+    except ExecutionError as error:
         submission.status = 'error'
         submission.status_detail = str(error)[:255]
         storage.save()
@@ -90,7 +132,7 @@ def refresh(client, submission):
     executions = json.loads(submission.judge0_tokens)
     try:
         results = client.get_batch([e['token'] for e in executions])
-    except Judge0Error as error:
+    except ExecutionError as error:
         logger.info('Could not refresh submission %s: %s', submission.id,
                     error)
         return False

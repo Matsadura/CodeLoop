@@ -1,11 +1,13 @@
 # Overlay for a single small VPS (about 1 GB RAM): Caddy terminates TLS with an
-# automatic Let's Encrypt certificate for $DOMAIN, and MySQL/Gunicorn are
-# tuned for low memory. Use it on top of the production stack:
+# automatic Let's Encrypt certificate for $DOMAIN, code runs in a local Piston
+# sandbox, and MySQL/Gunicorn are tuned for low memory. Use it on top of the
+# production stack:
 #
 #   docker compose -f docker-compose.prod.yml -f deploy/docker-compose.vps.yml \
 #     --env-file .env.production up -d --build
 #
-# Requires DOMAIN in .env.production and ports 80 and 443 open to the internet.
+# Requires DOMAIN in .env.production, ports 80 and 443 open to the internet,
+# and a host with pure cgroup v2 for Piston (see docs/DEPLOYMENT.md).
 services:
   mysql:
     command:
@@ -21,6 +23,23 @@ services:
     environment:
       WEB_CONCURRENCY: "2"
       GUNICORN_THREADS: "4"
+      CODE_RUNNER: piston
+      PISTON_URL: http://piston:2000
+      PISTON_CONCURRENCY: "2"
+
+  piston:
+    build:
+      context: ./piston
+    restart: unless-stopped
+    # isolate needs privileges to create namespaces and cgroups. The
+    # container is not published; only the API can reach it.
+    privileged: true
+    tmpfs:
+      - /tmp:exec
+    environment:
+      PISTON_MAX_CONCURRENT_JOBS: "2"
+      PISTON_RUN_MEMORY_LIMIT: "134217728"
+    mem_limit: 512m
 
   web:
     # Only reachable through Caddy.
