@@ -1,15 +1,40 @@
 #!/usr/bin/python3
-"""Metrics Routes"""
+"""Status, health and metrics routes"""
+import logging
+
 from api.views import app_views
+from flask import jsonify
+from models import storage
+from sqlalchemy.exc import SQLAlchemyError
+
+logger = logging.getLogger(__name__)
 
 
 @app_views.route('/status')
 def status():
-    """Return the API status all wrapped in a json object"""
+    """Liveness: the process is up and serving requests"""
     return {"status": "OK"}, 200
 
 
-@app_views.route('stats')
+@app_views.route('/health')
+def health():
+    """Readiness: the API can reach its database.
+
+    Returns 200 when ready and 503 otherwise. Judge0 is deliberately not
+    part of readiness: when it is down the API keeps serving everything
+    except code execution, and submissions report the outage themselves.
+    """
+    try:
+        storage.ping()
+    except SQLAlchemyError as error:
+        logger.warning('Health check: database unavailable (%s)',
+                       error.__class__.__name__)
+        return jsonify({"status": "unavailable",
+                        "database": "unavailable"}), 503
+    return jsonify({"status": "ok", "database": "ok"}), 200
+
+
+@app_views.route('/stats')
 def stats():
     """Return the count of all classes"""
     from models.solution_result import Solution_Result
@@ -20,7 +45,6 @@ def stats():
     from models.task import Task
     from models.task_test_cases import Task_Test_Cases
     from models.category import Category
-    from models import storage
 
     return {
             "Categories": storage.count(Category),

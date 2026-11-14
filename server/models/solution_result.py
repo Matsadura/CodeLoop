@@ -5,7 +5,7 @@ from sqlalchemy.orm import relationship
 
 
 class Solution_Result(BaseModel, Base):
-    """Representation of a solution result"""
+    """Representation of a solution result (one test case of a submission)"""
     __tablename__ = 'solution_results'
     submission_id = Column(String(128),
                            ForeignKey('submissions.id', ondelete='CASCADE'),
@@ -15,11 +15,6 @@ class Solution_Result(BaseModel, Base):
     stdout = Column(TEXT, nullable=True)
     expected_output = Column(TEXT, nullable=True)
     stderr = Column(TEXT, nullable=True)
-    stdin = Column(String(4096),  nullable=True)
+    stdin = Column(TEXT, nullable=True)
     time = Column(String(128), nullable=True)
-    submission = relationship("Submission", back_populates="solution_results",)
-
-
-def __init__(self, *args, **kwargs):
-    """initializes solution result"""
-    super().__init__(*args, **kwargs)
+    submission = relationship("Submission", back_populates="solution_results")

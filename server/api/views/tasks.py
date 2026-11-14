@@ -9,76 +9,72 @@ Routes:
         - POST: Create a new task.
     - /tasks/<task_id>:
         - GET: Retrieve a specific task.
-        - PUT: Update a specific task.
-        - DELETE: Delete a specific task.
-
-Attributes:
-    - Task: Class representing tasks.
-    - storage: Object for interacting with the database storage.
-
-Exceptions:
-    - Invalid token: Raised when the JWT token is invalid.
-    - User not found: Raised when the user is not found in the database.
-    - Unauthorized: Raised when the user is not authorized to access
-        or modify the data.
-    - Invalid data: Raised when the request data is invalid or missing.
+        - PUT: Update a specific task (author only).
+        - DELETE: Delete a specific task (author only).
 
 Returns:
     - JSON response containing the task data or appropriate error messages.
 """
+from api import validation
 from api.views import app_views
-from api.views.auth import isAuthenticated
-from datetime import datetime
+from api.views.auth import current_user_id
+from api.views.categories import task_list_with_favorites
+from api.views.common import fail, get_or_404
 from flask import jsonify, request
 from flask_jwt_extended import jwt_required
 from models import storage
-from models.task import Task
+from models.category import Category
+from models.task import TASK_DIFFICULTIES, Task
+
+MAX_DESCRIPTION_LENGTH = 20000
+
+
+def get_owned_task(task_id):
+    """Return the task if the current user authored it (403 otherwise)"""
+    task = get_or_404(Task, task_id, 'Task not found')
+    if task.user_id != current_user_id():
+        fail(403, 'Only the author of this task can modify it')
+    return task
+
+
+def _check_title_available(title, task_id=None):
+    existing = storage.get_specific(Task, 'title', title)
+    if existing and existing.id != task_id:
+        fail(409, 'Task name already exists')
 
 
 @app_views.route('/tasks', methods=['GET', 'POST'])
 @jwt_required()
 def handle_tasks():
-    from models.user_favorite import User_Favorite
     """Handle tasks related requests
 
     - Header: Authorization Bearer Token (required)
 
     POST:
         - Input:
-            - title: String (required)
-            - description: String (required)
-            - difficulty: String (required)
-            - category: String (required) # NOT IMPLEMENTED
+            - title: String (required, max 255)
+            - description: String (required, markdown)
+            - difficulty: easy | medium | hard (required)
+            - category_id: String (required)
     """
-    current_user = isAuthenticated()
     if request.method == 'GET':  # Get all tasks
-        tasks = storage.all_list(Task)
-        if not tasks:
-            return jsonify([])
-        tasks_list = []
-        for task in tasks:
-            task = task.to_dict()
-            task['favoritesCount'] = storage.count_specific(User_Favorite,
-                                                            'task_id',
-                                                            task['id'])
-            tasks_list.append(task)
-        return jsonify(tasks_list)
+        return jsonify(task_list_with_favorites(storage.all_list(Task)))
 
-    elif request.method == 'POST':  # Create a new task
-        data = request.get_json()
-        if not data:
-            return jsonify({"error": "No data provided"}), 400
-        if not data.get('title') or not data.get('description'):
-            return jsonify({"error": "Invalid request"}), 400
-        existing_task = storage.get_specific(Task, 'title', data['title'])
-        if existing_task:
-            return jsonify({'error': "Task name already exists"}), 409
-        task = Task(user_id=current_user, **data)
-        storage.new(task)
-        storage.save()
-        return jsonify(task.to_dict()), 201
-
-    return jsonify({"error": "Invalid request"}), 400
+    data = validation.json_body()
+    title = validation.string(data, 'title', 255)
+    description = validation.string(data, 'description',
+                                    MAX_DESCRIPTION_LENGTH)
+    difficulty = validation.choice(data, 'difficulty', TASK_DIFFICULTIES)
+    category_id = validation.string(data, 'category_id', 60)
+    if storage.get(Category, category_id) is None:
+        raise validation.ValidationError('Category not found',
+                                         'category_id')
+    _check_title_available(title)
+    task = Task(title=title, description=description, difficulty=difficulty,
+                category_id=category_id, user_id=current_user_id())
+    storage.new(task)
+    storage.save()
+    return jsonify(task.to_dict()), 201
 
 
 @app_views.route('/tasks/<task_id>', methods=['GET', 'PUT', 'DELETE'])
@@ -93,40 +89,38 @@ def handle_specific_tasks(task_id):
             - title: String (optional)
             - description: String (optional)
             - difficulty: String (optional)
-            - category: String (optional) # NOT IMPLEMENTED
+            - category_id: String (optional)
     """
-    current_user = isAuthenticated()
-
     if request.method == 'GET':  # Get a specific task
-        task = storage.get_specific(Task, 'id', task_id)
-        if not task:
-            return jsonify({"error": "Task not found"}), 404
+        task = get_or_404(Task, task_id, 'Task not found')
         return jsonify(task.to_dict())
 
-    elif request.method == 'PUT':  # Update a specific task
-        task = storage.get_specific(Task, 'id', task_id)
-        if not task:
-            return jsonify({"error": "Task not found"}), 404
-        if task.user_id != current_user:
-            return jsonify({"error": "Unauthorized"}), 401
-        data = request.get_json()
-        if not data:
-            return jsonify({"error": "No data provided"}), 400
+    task = get_owned_task(task_id)
 
-        valid_attributes = ['title', 'description', 'difficulty']
-        for k, v in data.items():
-            if k in valid_attributes:
-                setattr(task, k, v)
-        task.updated_at = datetime.now()
-        storage.save()
-        return jsonify(task.to_dict())
-
-    elif request.method == 'DELETE':  # Delete a specific task
-        task = storage.get_specific(Task, 'id', task_id)
-        if not task:
-            return jsonify({"error": "Task not found"}), 404
-        if task.user_id != current_user:
-            return jsonify({"error": "Unauthorized"}), 401
+    if request.method == 'DELETE':
         storage.delete(task)
         storage.save()
         return jsonify({}), 200
+
+    data = validation.json_body()
+    title = validation.string(data, 'title', 255, required=False)
+    description = validation.string(data, 'description',
+                                    MAX_DESCRIPTION_LENGTH, required=False)
+    difficulty = validation.choice(data, 'difficulty', TASK_DIFFICULTIES,
+                                   required=False)
+    category_id = validation.string(data, 'category_id', 60, required=False)
+    if title is not None:
+        _check_title_available(title, task.id)
+        task.title = title
+    if description is not None:
+        task.description = description
+    if difficulty is not None:
+        task.difficulty = difficulty
+    if category_id is not None:
+        if storage.get(Category, category_id) is None:
+            raise validation.ValidationError('Category not found',
+                                             'category_id')
+        task.category_id = category_id
+    task.touch()
+    storage.save()
+    return jsonify(task.to_dict())

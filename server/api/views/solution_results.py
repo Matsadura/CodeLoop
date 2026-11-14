@@ -2,14 +2,15 @@
 
 Routes:
     - /submissions/<submission_id>/results:
-        GET : Retrieves the solution results for a submission.
+        GET : Retrieves the per-test-case results of one of the current
+              user's submissions.
 """
 from api.views import app_views
+from api.views.submissions import get_owned_submission
 from flask import jsonify
 from flask_jwt_extended import jwt_required
 from models import storage
 from models.solution_result import Solution_Result
-from models.submission import Submission
 
 
 @app_views.route('/submissions/<submission_id>/results', methods=['GET'])
@@ -19,9 +20,7 @@ def get_solution_results(submission_id):
 
     - Header: Authorization: Bearer <token>
     """
-    submission = storage.get(Submission, submission_id)
-    if not submission:
-        return jsonify({'error': 'Submission not found'}), 404
+    get_owned_submission(submission_id)
     solution_result = storage.all_list_specific(Solution_Result,
                                                 'submission_id',
                                                 submission_id)
