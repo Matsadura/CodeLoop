@@ -1,0 +1,48 @@
+# Overlay for a single small VPS (about 1 GB RAM): Caddy terminates TLS with an
+# automatic Let's Encrypt certificate for $DOMAIN, and MySQL/Gunicorn are
+# tuned for low memory. Use it on top of the production stack:
+#
+#   docker compose -f docker-compose.prod.yml -f deploy/docker-compose.vps.yml \
+#     --env-file .env.production up -d --build
+#
+# Requires DOMAIN in .env.production and ports 80 and 443 open to the internet.
+services:
+  mysql:
+    command:
+      - --performance-schema=OFF
+      - --innodb-buffer-pool-size=64M
+      - --innodb-log-buffer-size=8M
+      - --max-connections=40
+      - --table-open-cache=256
+      - --tmp-table-size=16M
+      - --max-heap-table-size=16M
+
+  api:
+    environment:
+      WEB_CONCURRENCY: "2"
+      GUNICORN_THREADS: "4"
+
+  web:
+    # Only reachable through Caddy.
+    ports: !reset []
+
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN, e.g. codeloop.example.com}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      web:
+        condition: service_healthy
+
+volumes:
+  caddy_data:
+  caddy_config:

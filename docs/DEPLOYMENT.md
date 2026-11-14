@@ -79,7 +79,13 @@ cp .env.production.example .env.production      # fill in every value
 docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
 ```
 
-- The web container listens on `${WEB_PORT:-8080}`. Put a TLS terminator such as Caddy, Traefik or a cloud load balancer in front of it.
+- The web container listens on `${WEB_PORT:-8080}`. Put a TLS terminator such as Caddy, Traefik or a cloud load balancer in front of it, or use the bundled overlay described below.
+- **Small VPS with automatic HTTPS:** [`deploy/docker-compose.vps.yml`](../deploy/docker-compose.vps.yml) adds Caddy, which gets a Let's Encrypt certificate for `DOMAIN`, and tunes MySQL and Gunicorn for about 1 GB of RAM. Point the domain's DNS at the server, open ports 80 and 443, set `DOMAIN` in `.env.production`, then run:
+  ```bash
+  docker compose -f docker-compose.prod.yml -f deploy/docker-compose.vps.yml \
+    --env-file .env.production up -d --build
+  ```
+  On hosts with 1 GB of RAM, add swap before building: the frontend build needs more memory than that.
 - MySQL is not published to the host. Its data lives in the `codeloop-prod_mysql_data` volume; back it up with `mysqldump` (see the README).
 - Point `JUDGE0_URL` at a Judge0 VM set up as in option A, step 1. Running Judge0 on the same host is possible if that host uses cgroup v1, but it is not wired up by default. You would need to attach the `api` service to Judge0's network and set `JUDGE0_URL=http://judge0:2358`. Keep in mind that Judge0's privileged containers then share a kernel with your database.
 
