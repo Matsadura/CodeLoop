@@ -30,6 +30,7 @@ MAX_CODE_LENGTH = 65000
 
 
 def judge0_client():
+    """The configured code runner (Judge0 or Piston client)"""
     return current_app.extensions['judge0_client']
 
 
@@ -66,10 +67,9 @@ def submit_task(task_id):
         raise validation.ValidationError('Code is required', 'code')
     language = validation.string(data, 'language', 32).lower()
     client = judge0_client()
-    if client.language_id(language) is None or \
-            language not in Submission.language.type.enums:
-        supported = sorted(set(judge0_settings().language_ids) &
-                           set(Submission.language.type.enums))
+    supported = sorted(client.supported_languages() &
+                       set(Submission.language.type.enums))
+    if language not in supported:
         raise validation.ValidationError(
             f'Unsupported language "{language}". Supported: '
             f'{", ".join(supported)}', 'language')

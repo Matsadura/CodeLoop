@@ -44,6 +44,8 @@ services:
       CODE_DB_NAME: ${MYSQL_DATABASE:-CODE_DB}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-only-insecure-jwt-secret-change-me}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
+      CODE_RUNNER: ${CODE_RUNNER:-judge0}
+      PISTON_URL: ${PISTON_URL:-http://piston:2000}
       JUDGE0_URL: ${JUDGE0_URL:-http://judge0:2358}
       JUDGE0_AUTH_TOKEN: ${JUDGE0_AUTH_TOKEN:-}
     networks:
@@ -58,6 +60,19 @@ services:
       timeout: 5s
       retries: 10
       start_period: 30s
+
+  # Optional local code runner (needs a host with pure cgroup v2, e.g. WSL2
+  # or Ubuntu 22.04+):  CODE_RUNNER=piston docker compose --profile piston up
+  piston:
+    build:
+      context: ./piston
+    profiles: ["piston"]
+    restart: unless-stopped
+    privileged: true
+    tmpfs:
+      - /tmp:exec
+    ports:
+      - "127.0.0.1:2000:2000"
 
   client:
     build:
