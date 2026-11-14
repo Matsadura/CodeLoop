@@ -1,3 +1,13 @@
+# Self-hosted Judge0 CE 1.13.1 (code execution sandbox).
+#   cp judge0.conf.example judge0.conf   # then set the passwords
+#   docker compose up -d db redis && sleep 10 && docker compose up -d
+#
+# Requirements: a Linux host with cgroup v1 (see README > Judge0) and
+# privileged containers. Never run this on a serverless/PaaS platform.
+#
+# The API is published on 127.0.0.1 only; anyone who can reach Judge0 can
+# run arbitrary code. When the CodeLoop dev stack is running, Judge0 also
+# joins its "codeloop-judge0" network and is reachable as http://judge0:2358.
 x-logging:
   &default-logging
   logging:
@@ -11,8 +21,13 @@ services:
     volumes:
       - ./judge0.conf:/judge0.conf:ro
     ports:
-      - "2358:2358"
+      - "${JUDGE0_BIND_ADDRESS:-127.0.0.1}:${JUDGE0_PORT:-2358}:2358"
     privileged: true
+    networks:
+      default:
+      codeloop:
+        aliases:
+          - judge0
     <<: *default-logging
     restart: always
 
@@ -42,6 +57,11 @@ services:
     env_file: judge0.conf
     <<: *default-logging
     restart: always
+
+networks:
+  codeloop:
+    name: codeloop-judge0
+    external: true
 
 volumes:
   data:

@@ -1,0 +1,65 @@
+# Production-like stack on a single host: MySQL (private) + Gunicorn API +
+# Nginx serving the built frontend and proxying /api.
+#   cp .env.production.example .env.production   # fill in real secrets
+#   docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+# Judge0 is external: point JUDGE0_URL at your Judge0 VM or hosted Judge0.
+name: codeloop-prod
+
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-CODE_DB}
+      MYSQL_USER: ${MYSQL_USER:-CODE_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?set MYSQL_PASSWORD}
+    # No published ports: only the API can reach the database.
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  api:
+    build:
+      context: ./server
+      target: prod
+    restart: unless-stopped
+    environment:
+      APP_ENV: production
+      CODE_DB_HOST: mysql
+      CODE_DB_USER: ${MYSQL_USER:-CODE_USER}
+      CODE_DB_PASSWORD: ${MYSQL_PASSWORD:?set MYSQL_PASSWORD}
+      CODE_DB_NAME: ${MYSQL_DATABASE:-CODE_DB}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?set JWT_SECRET_KEY}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
+      JUDGE0_URL: ${JUDGE0_URL:?set JUDGE0_URL}
+      JUDGE0_AUTH_TOKEN: ${JUDGE0_AUTH_TOKEN:-}
+      JUDGE0_RAPIDAPI_KEY: ${JUDGE0_RAPIDAPI_KEY:-}
+      JUDGE0_RAPIDAPI_HOST: ${JUDGE0_RAPIDAPI_HOST:-}
+      FORWARDED_ALLOW_IPS: "*"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./client
+      target: prod
+      args:
+        VITE_API_BASE_URL: /api
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-8080}:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  mysql_data:

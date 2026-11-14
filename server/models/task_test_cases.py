@@ -12,9 +12,4 @@ class Task_Test_Cases(BaseModel, Base):
                      nullable=False)
     input = Column(TEXT, nullable=False)
     expected_output = Column(TEXT, nullable=False)
-    task = relationship("Task", back_populates="task_test_cases",)
-
-
-def __init__(self, *args, **kwargs):
-    """initializes task test cases"""
-    super().__init__(*args, **kwargs)
+    task = relationship("Task", back_populates="task_test_cases")

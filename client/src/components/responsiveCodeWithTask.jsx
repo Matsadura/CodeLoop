@@ -6,120 +6,76 @@ import { RiFullscreenExitLine } from 'react-icons/ri';
 import { GrCloudUpload } from 'react-icons/gr';
 import { GrTest } from 'react-icons/gr';
 import { TestsDragger } from './TestsDragger';
-import { request } from '../tools/requestModule';
-import { useParams } from 'react-router-dom';
-import { TbRotateClockwise } from "react-icons/tb";
-import { IoHomeOutline } from "react-icons/io5";
+import { Link } from 'react-router-dom';
+import { TbRotateClockwise } from 'react-icons/tb';
+import { IoHomeOutline } from 'react-icons/io5';
+
+const STATUS_STYLES = {
+	correct: 'text-green-400',
+	incorrect: 'text-red-400',
+	pending: 'text-blue-300',
+	error: 'text-yellow-300',
+};
+
+/** Last submission status (and any submit error) */
+function SubmissionStatus({ latest, submitError }) {
+	return <span className='text-sm text-gray-400 flex flex-col px-2 py-1' role='status' aria-live='polite'>
+		{latest ?
+			<span>Last submission: <span className={STATUS_STYLES[latest.status] || ''}>{latest.status}</span></span>
+			: 'Submit your first solution...'}
+		{submitError ? <span className='text-yellow-300 text-xs'>{submitError}</span> : null}
+	</span>
+}
+
+function SubmitButton({ onSubmit, submitting, className = '' }) {
+	return <button type='button' disabled={submitting} aria-busy={submitting ? 'true' : undefined}
+		className={`text-sm text-gray-50 flex rounded-lg items-center justify-center gap-1 bg-crimson-100 hover:bg-crimson-200 px-2 py-1 disabled:cursor-not-allowed disabled:opacity-70 ${className}`}
+		onClick={onSubmit}>
+		{submitting ? <TbRotateClockwise className='animate-spin' aria-hidden='true' /> : <GrCloudUpload aria-hidden='true' />}
+		{submitting ? 'Running...' : 'Submit'}
+	</button>
+}
 
 /**
  * Renders a full-width coding space with expandable task and code panels
  * This components is what will be randered in wide screens
- * @param {Object} props
- * @param {React.ReactNode} props.codeEditor - Monaco editor component
- * @param {React.ReactNode} props.taskView - Task markdown viewer component
- * @returns {React.ReactElement} Desktop split view component
  */
-function CodingSpaceWide({ codeEditor, taskView, submitAction, snippet }) {
+function CodingSpaceWide({ codeEditor, taskView, onSubmit, submitting, submitError, latest, showTests, setShowTests, resultsKey }) {
 	const [expandTaskContainer, setExpandTaskContainer] = useState(false);
 	const [expandCodeContainer, setExpandCodeContainer] = useState(false);
-	const [showSubmitPanding, setSubmitPanding] = useState(false);
-	const [showTests, setShowTests] = useState(false);
-	const [taskStatus, setTaskStatus] = useState(null);
-
-	const { taskId } = useParams();
 
 	function toggleTask() {
-		if (expandTaskContainer) {
-			setExpandCodeContainer(false);
-			setExpandTaskContainer(false);
-		} else {
-			setExpandCodeContainer(false);
-			setExpandTaskContainer(true);
-		}
+		setExpandCodeContainer(false);
+		setExpandTaskContainer(!expandTaskContainer);
 	}
 
 	function toggleCode() {
-		if (expandCodeContainer) {
-			setExpandCodeContainer(false);
-			setExpandTaskContainer(false);
-		} else {
-			setExpandCodeContainer(true);
-			setExpandTaskContainer(false);
-		}
+		setExpandTaskContainer(false);
+		setExpandCodeContainer(!expandCodeContainer);
 	}
 
-	useEffect(() => getLastSubmission(), [showTests]);
+	return <div className='p-4 bg-violet-600 h-screen relative'>
+		<TestsDragger open={showTests} setOpen={setShowTests} latest={latest} refreshKey={resultsKey} />
 
-	// To show the code status
-	function getLastSubmission() {
-		const request_header = {
-			method: "GET",
-			headers: { "Content-Type": "application/json" },
-		};
-		request(`/tasks/${taskId}/submissions`, request_header).then((res) => {
-			if (res.data.length === 0)
-				console.log('empty tests');
-			else {
-				res.data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-				console.log(res.data[0]);
-				setTaskStatus(res.data[0].status)
-			}
-		});
-	}
-
-	function SubmitCode() {
-		if (showSubmitPanding)
-			return;
-		const request_header = {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({
-				code: snippet,
-				language: "python"
-			})
-		};
-		setSubmitPanding(true);
-		request(`/tasks/${taskId}/submit`, request_header).then((res) => {
-			setSubmitPanding(false);
-			setShowTests(true);
-		}).catch((error) => {
-			console.error("Submission error:", error);
-			setSubmitPanding(false);
-		});;
-	}
-
-	return <div className="p-4 bg-violet-600 h-screen relative">
-		<TestsDragger open={showTests} setOpen={setShowTests} />
-
-		<div className="grid grid-cols-12 rounded-md border-2 border-gray-300 border-opacity-30 overflow-hidden h-full">
-			<div className='bg-violet-500 border-b border-gray-300 border-opacity-70 col-span-12 h-12 flex w-full px-4 justify-between'>
+		<div className='grid grid-cols-12 rounded-md border-2 border-gray-300 border-opacity-30 overflow-hidden h-full'>
+			<div className='bg-violet-500 border-b border-gray-300 border-opacity-70 col-span-12 min-h-12 flex w-full px-4 justify-between'>
 				<div className='flex items-center'>
-					<button className="text-lg text-crimson-100 hover:text-crimson-200  flex items-center gap-1" onClick={toggleTask}>{expandTaskContainer ? <RiFullscreenExitLine /> : <RiFullscreenFill />} Task</button>
+					<button type='button' className='text-lg text-crimson-100 hover:text-crimson-200  flex items-center gap-1' onClick={toggleTask}>{expandTaskContainer ? <RiFullscreenExitLine aria-hidden='true' /> : <RiFullscreenFill aria-hidden='true' />} Task</button>
 				</div>
 				<div className='flex items-center gap-3'>
-					<a className="text-sm border hover:border-transparent border-crimson-200  rounded-lg text-crimson-200 flex items-center gap-1 px-2 py-1" href='/tasks'><IoHomeOutline />Home</a>
-					<button className="text-sm border hover:border-transparent border-crimson-200  rounded-lg text-crimson-200 flex items-center gap-1 px-2 py-1" onClick={() => setShowTests(!showTests)}><GrTest />Output & Tests</button>
-					<button className={`text-sm text-gray-50 flex rounded-lg ${showSubmitPanding && 'cursor-not-allowed'} items-center gap-1 bg-crimson-100 hover:bg-crimson-200 px-2 py-1`} onClick={SubmitCode}>
-						{showSubmitPanding ? <TbRotateClockwise className='animate-spin' /> : <GrCloudUpload />}  Submit
-					</button>
-					<span className={`text-sm text-gray-400 flex rounded-lg items-center gap-1 px-2 py-1`}>
-						{taskStatus ?
-							<span>Last submission status: <span className=''>{taskStatus}</span></span>
-							: 'Sumbit your first submittion...'}
-
-					</span>
-
-
+					<Link className='text-sm border hover:border-transparent border-crimson-200  rounded-lg text-crimson-200 flex items-center gap-1 px-2 py-1' to='/tasks'><IoHomeOutline aria-hidden='true' />Home</Link>
+					<button type='button' className='text-sm border hover:border-transparent border-crimson-200  rounded-lg text-crimson-200 flex items-center gap-1 px-2 py-1' onClick={() => setShowTests(!showTests)}><GrTest aria-hidden='true' />Output & Tests</button>
+					<SubmitButton onSubmit={onSubmit} submitting={submitting} />
+					<SubmissionStatus latest={latest} submitError={submitError} />
 				</div>
 				<div className='flex items-center'>
-					<button className="text-lg text-crimson-100 hover:text-crimson-200 flex items-center gap-1" onClick={toggleCode}>{expandCodeContainer ? <RiFullscreenExitLine /> : <RiFullscreenFill />} Editor</button>
+					<button type='button' className='text-lg text-crimson-100 hover:text-crimson-200 flex items-center gap-1' onClick={toggleCode}>{expandCodeContainer ? <RiFullscreenExitLine aria-hidden='true' /> : <RiFullscreenFill aria-hidden='true' />} Editor</button>
 				</div>
 			</div>
-			{/* buttons */}
-			<div className={`${expandTaskContainer ? 'col-span-12' : 'col-span-5'} ${expandCodeContainer ? 'hidden' : null} col-span-12 h-full min-h-screen pb-24 overflow-auto`}>
+			<div className={`${expandTaskContainer ? 'col-span-12' : 'col-span-5'} ${expandCodeContainer ? 'hidden' : ''} h-full min-h-screen pb-24 overflow-auto`}>
 				{taskView}
 			</div>
-			<div className={`py-2 bg-violet-500 ${expandTaskContainer ? 'hidden' : null} ${expandCodeContainer ? 'col-span-12' : 'col-span-7'} ${expandCodeContainer ? null : 'border-l'} border-l-white h-screen border-t-transparent`}>
+			<div className={`py-2 bg-violet-500 ${expandTaskContainer ? 'hidden' : ''} ${expandCodeContainer ? 'col-span-12' : 'col-span-7 border-l'} border-l-white h-screen border-t-transparent`}>
 				{codeEditor}
 			</div>
 		</div>
@@ -129,63 +85,50 @@ function CodingSpaceWide({ codeEditor, taskView, submitAction, snippet }) {
 /**
  * Renders a mobile-friendly view with toggleable task and code panels
  * This components is what will be randered in mobile screens
- * @param {Object} props
- * @param {React.ReactNode} props.codeEditor - Monaco editor component
- * @param {React.ReactNode} props.taskView - Task markdown viewer component
- * @returns {React.ReactElement} Mobile view component
  */
-function CodingSpaceMobile({ codeEditor, taskView }) {
-	const [taskMobile, setTaskMobile] = useState(true);
-	const [codeMobile, setCodeMobile] = useState(false);
+function CodingSpaceMobile({ codeEditor, taskView, onSubmit, submitting, submitError, latest, showTests, setShowTests, resultsKey }) {
+	const [showCode, setShowCode] = useState(false);
 
-	function showCodeMobile() {
-		setTaskMobile(false);
-		setCodeMobile(true);
-	}
+	const tabClass = (active) => `flex items-center justify-center gap-1 ${active ? 'bg-violet-400' : ''}`;
 
-	function showTaskMobile() {
-		setTaskMobile(true);
-		setCodeMobile(false);
-	}
-
-	return <div className="bg-violet-600 h-screen relative">
-		<div className="fixed z-50 bottom-0 right-0 h-10 bg-violet-500 border-t text-crimson-200 text-xl w-screen md:hidden grid grid-cols-2 divide-x-2">
-			<button className="grid-cols-1 flex items-center justify-center" onClick={showCodeMobile}><FaCode /></button>
-			<button className="grid-cols-1 flex items-center justify-center" onClick={showTaskMobile}><BsCardText /></button>
+	return <div className='bg-violet-600 h-screen relative'>
+		<TestsDragger open={showTests} setOpen={setShowTests} latest={latest} refreshKey={resultsKey} />
+		<div className='flex items-center justify-between gap-2 bg-violet-500 px-2 py-2 border-b border-gray-300 border-opacity-40'>
+			<Link className='text-sm text-crimson-200 flex items-center gap-1' to='/tasks'><IoHomeOutline aria-hidden='true' />Home</Link>
+			<SubmissionStatus latest={latest} submitError={submitError} />
 		</div>
-		<div className="grid grid-cols-12 rounded-md border-2 border-gray-300 border-opacity-30 h-full mb-16">
-			<div className={`${taskMobile ? 'col-span-12' : 'hidden'}  col-span-12 h-full overflow-auto`}>
+		<div className='fixed z-50 bottom-0 right-0 h-12 bg-violet-500 border-t text-crimson-200 text-sm w-screen grid grid-cols-4 divide-x-2'>
+			<button type='button' className={tabClass(!showCode)} onClick={() => setShowCode(false)} aria-pressed={!showCode}><BsCardText aria-hidden='true' />Task</button>
+			<button type='button' className={tabClass(showCode)} onClick={() => setShowCode(true)} aria-pressed={showCode}><FaCode aria-hidden='true' />Code</button>
+			<button type='button' className={tabClass(false)} onClick={() => setShowTests(true)}><GrTest aria-hidden='true' />Tests</button>
+			<SubmitButton onSubmit={onSubmit} submitting={submitting} className='rounded-none' />
+		</div>
+		<div className='grid grid-cols-12 rounded-md border-2 border-gray-300 border-opacity-30 h-full pb-24'>
+			<div className={`${showCode ? 'hidden' : 'col-span-12'} h-full overflow-auto`}>
 				{taskView}
 			</div>
-			<div className={`${codeMobile ? 'col-span-12' : 'hidden'} h-screen border-t-white`}>
+			<div className={`${showCode ? 'col-span-12' : 'hidden'} h-full border-t-white`}>
 				{codeEditor}
 			</div>
 		</div>
-	</div >
+	</div>
 }
 
 /**
  * A responsive wrapper that switches between mobile and desktop layouts
- * @param {Object} props
- * @param {React.ReactNode} props.codeEditor - Monaco editor component
- * @param {React.ReactNode} props.taskView - Task markdown viewer component
- * @returns {React.ReactElement} Responsive component
  */
-export default function ResponsiveCodeWithTask({ codeEditor, taskView, submitAction, snippet }) {
+export default function ResponsiveCodeWithTask(props) {
 	const [width, setWidth] = useState(window.innerWidth);
 
-	function handleWindowSizeChange() {
-		setWidth(window.innerWidth);
-	}
 	useEffect(() => {
+		function handleWindowSizeChange() {
+			setWidth(window.innerWidth);
+		}
 		window.addEventListener('resize', handleWindowSizeChange);
 		return () => {
 			window.removeEventListener('resize', handleWindowSizeChange);
 		}
 	}, []);
 
-	const isMobile = width <= 768;
-	return isMobile ?
-		<CodingSpaceMobile codeEditor={codeEditor} taskView={taskView} submitAction={submitAction} snippet={snippet} />
-		: <CodingSpaceWide codeEditor={codeEditor} taskView={taskView} submitAction={submitAction} snippet={snippet} />;
+	return width <= 768 ? <CodingSpaceMobile {...props} /> : <CodingSpaceWide {...props} />;
 }

@@ -1,51 +1,84 @@
-version: '3.8'
+# Local development stack: MySQL + Flask dev server + Vite dev server.
+#   cp .env.example .env    # optional: override the dev defaults below
+#   docker compose up --build
+# Judge0 runs as a separate compose project (judge0/); start this stack first
+# so the shared "codeloop-judge0" network exists, then start Judge0. The API
+# reaches it as http://judge0:2358 on that network.
+name: codeloop
 
 services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-dev-root-password}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-CODE_DB}
+      MYSQL_USER: ${MYSQL_USER:-CODE_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-dev-password}
+    ports:
+      # Bound to localhost only, for database clients during development.
+      - "127.0.0.1:${MYSQL_HOST_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
   api:
     build:
-      context: .
-      dockerfile: server/flask.dockerfile
+      context: ./server
+      target: dev
+    restart: unless-stopped
     ports:
       - "5000:5000"
     volumes:
-      - ./server:/Learning_platform/server
-      - /var/run/docker.sock:/var/run/docker.sock
+      - ./server:/app
     environment:
-      CODE_DB_HOST: mysql_db
-      CODE_DB_USER: CODE_USER
-      CODE_DB_PASSWORD: CODE_PASSWORD
-      CODE_DB_NAME: CODE_DB
-      PYTHONPATH: /Learning_platform
+      APP_ENV: development
+      CODE_DB_HOST: mysql
+      CODE_DB_USER: ${MYSQL_USER:-CODE_USER}
+      CODE_DB_PASSWORD: ${MYSQL_PASSWORD:-dev-password}
+      CODE_DB_NAME: ${MYSQL_DATABASE:-CODE_DB}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-only-insecure-jwt-secret-change-me}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
+      JUDGE0_URL: ${JUDGE0_URL:-http://judge0:2358}
+      JUDGE0_AUTH_TOKEN: ${JUDGE0_AUTH_TOKEN:-}
+    networks:
+      - default
+      - judge0
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/api/health', timeout=4)"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
   client:
-      build:
-        context: .
-        dockerfile: client/vite.dockerfile
-      ports:
-        - "3000:3000"
-      volumes:
-        - ./client:/Learning_platform/client
-        - /Learning_platform/client/node_modules
-      environment:
-        - CHOKIDAR_USEPOLLING=true
-      stdin_open: true
-      tty: true
-
-  mysql:
-    image: mysql:8.0
-    container_name: mysql_db
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: root_password
-      MYSQL_DATABASE: CODE_DB
-      MYSQL_USER: CODE_USER
-      MYSQL_PASSWORD: CODE_PASSWORD
+    build:
+      context: ./client
+      target: dev
+    restart: unless-stopped
     ports:
-      - "3306:3306"
+      - "3000:3000"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - ./client:/app
+      - /app/node_modules
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:5000/api}
+      # Needed for hot reload on Docker Desktop / WSL bind mounts.
+      CHOKIDAR_USEPOLLING: ${CHOKIDAR_USEPOLLING:-false}
+    depends_on:
+      - api
+
+networks:
+  judge0:
+    name: codeloop-judge0
 
 volumes:
   mysql_data:

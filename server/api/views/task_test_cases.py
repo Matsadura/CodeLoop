@@ -1,7 +1,7 @@
 """ Task test cases related routes
 This module contains routes for managing task test cases, including
 creating, retrieving, updating, and deleting test cases.
-This module requires JWT authentication for access control.
+Only the author of a task can see or change its test cases.
 
 Routes:
     - /tasks/<task_id>/test_cases:
@@ -12,30 +12,47 @@ Routes:
         - PUT: Update a specific task test case.
         - DELETE: Delete a specific task test case.
 
-Attributes:
-    - Task: Class representing tasks.
-    - Task_Test_Cases: Class representing task test cases.
-    - storage: Object for interacting with the database storage.
-
-Exceptions:
-    - Invalid token: Raised when the JWT token is invalid.
-    - User not found: Raised when the user is not found in the database.
-    - Unauthorized: Raised when the user is not authorized to access
-        or modify the data.
-    - Invalid data: Raised when the request data is invalid or missing.
-
 Returns:
     - JSON response containing the task test case data or appropriate error
         messages.
 """
+from api import validation
 from api.views import app_views
-from api.views.auth import isAuthenticated
-from datetime import datetime
+from api.views.auth import current_user_id
+from api.views.common import fail, get_or_404
 from flask import jsonify, request
 from flask_jwt_extended import jwt_required
 from models import storage
 from models.task import Task
 from models.task_test_cases import Task_Test_Cases
+
+# TEXT columns hold 65,535 bytes; 16,000 characters fit even in 4-byte UTF-8.
+MAX_TEST_DATA_LENGTH = 16000
+MAX_TEST_CASES_PER_TASK = 50
+
+
+def _test_data(data, field, required):
+    value = validation.string(data, field, MAX_TEST_DATA_LENGTH,
+                              required=required, strip=False)
+    if value is not None and not value.strip():
+        raise validation.ValidationError(
+            f'{field} must not be empty (use "None" when no input is '
+            'needed)', field)
+    return value
+
+
+def _owned_task(task_id):
+    task = get_or_404(Task, task_id, 'Task not found')
+    if task.user_id != current_user_id():
+        fail(403, 'Not authorized to access a test case for this task')
+    return task
+
+
+def _check_duplicate(task_id, input_text, test_case_id=None):
+    existing = storage.get_specific_double(
+        Task_Test_Cases, 'input', input_text, 'task_id', task_id)
+    if existing and existing.id != test_case_id:
+        fail(409, 'Test case already exists')
 
 
 @app_views.route('/tasks/<task_id>/test_cases', methods=['POST', 'GET'])
@@ -52,52 +69,29 @@ def create_task_test_case(task_id):
         - Output:
             - List of task test cases for the specified task.
     """
-    current_user = isAuthenticated()
-    task = storage.get_specific(Task, 'id', task_id)
-    if not task:
-        return jsonify({'error': 'Task not found'}), 404
+    _owned_task(task_id)
 
-    if task.user_id != current_user:
-        return jsonify({
-            'error': 'Not authorized to access a test case for this task'
-            }), 403
-
-    if request.method == 'POST':
-        data = request.get_json()
-        if not data:
-            return jsonify({'error': 'Not a JSON or No data provided'}), 400
-
-        input_text = data.get('input')
-        expected_output = data.get('expected_output')
-        if not input_text or not expected_output:
-            return jsonify({'error': 'Missing input or expected output'}), 400
-        existing_case = storage.get_specific_double(
-            Task_Test_Cases,
-            'input',
-            input_text,
-            'task_id',
-            task_id
-            )
-        if existing_case:
-            return jsonify({'error': 'Test case already exists'}), 400
-        task_test_case = Task_Test_Cases(
-            input=input_text,
-            expected_output=expected_output,
-            task_id=task_id
-        )
-        storage.new(task_test_case)
-        storage.save()
-        return jsonify(task_test_case.to_dict()), 201
-
-    elif request.method == 'GET':
+    if request.method == 'GET':
         task_test_cases = storage.all_list_specific(
-            Task_Test_Cases,
-            'task_id',
-            task_id
-            )
-        return jsonify([
-            task_test_case.to_dict() for task_test_case in task_test_cases
-            ])
+            Task_Test_Cases, 'task_id', task_id)
+        return jsonify([tc.to_dict() for tc in task_test_cases])
+
+    data = validation.json_body()
+    input_text = _test_data(data, 'input', required=True)
+    expected_output = _test_data(data, 'expected_output', required=True)
+    if storage.count_specific(Task_Test_Cases, 'task_id', task_id) >= \
+            MAX_TEST_CASES_PER_TASK:
+        fail(422, f'A task can have at most {MAX_TEST_CASES_PER_TASK} '
+             'test cases')
+    _check_duplicate(task_id, input_text)
+    task_test_case = Task_Test_Cases(
+        input=input_text,
+        expected_output=expected_output,
+        task_id=task_id
+    )
+    storage.new(task_test_case)
+    storage.save()
+    return jsonify(task_test_case.to_dict()), 201
 
 
 @app_views.route('/tasks/<task_id>/test_cases/<test_case_id>',
@@ -107,49 +101,32 @@ def handle_task_test_case(task_id, test_case_id):
     """ Get, update, or delete a task test case
 
     - Header: Authorization: Bearer <JWT>
-    GET:
-        - Output:
-            - Task test case data.
     PUT:
         - Input:
-            - input: String (required)
-            - expected_output: String (required)
-    DELETE:
-    - Output:
-            - Empty response with status code 204.
+            - input: String (optional)
+            - expected_output: String (optional)
     """
-    current_user = isAuthenticated()
-    task = storage.get_specific(Task, 'id', task_id)
-    if not task:
-        return jsonify({'error': 'Task not found'}), 404
-    if task.user_id != current_user:
-        return jsonify({
-            'error': 'Not authorized to access a test case for this task'
-            }), 403
-    task_test_case = storage.get_specific(
-        Task_Test_Cases,
-        'id',
-        test_case_id
-        )
-    if not task_test_case:
-        return jsonify({'error': 'Test case not found'}), 404
+    _owned_task(task_id)
+    task_test_case = storage.get(Task_Test_Cases, test_case_id)
+    if task_test_case is None or task_test_case.task_id != task_id:
+        fail(404, 'Test case not found')
 
     if request.method == 'GET':
         return jsonify(task_test_case.to_dict())
 
-    elif request.method == 'PUT':
-        data = request.get_json()
-        if not data:
-            return jsonify({'error': 'Not a JSON or No data provided'}), 400
-        if 'input' in data:
-            task_test_case.input = data['input']
-        if 'expected_output' in data:
-            task_test_case.expected_output = data['expected_output']
-        task_test_case.updated_at = datetime.now()
-        storage.save()
-        return jsonify(task_test_case.to_dict())
-
-    elif request.method == 'DELETE':
+    if request.method == 'DELETE':
         storage.delete(task_test_case)
         storage.save()
         return jsonify({}), 200
+
+    data = validation.json_body()
+    input_text = _test_data(data, 'input', required=False)
+    expected_output = _test_data(data, 'expected_output', required=False)
+    if input_text is not None:
+        _check_duplicate(task_id, input_text, task_test_case.id)
+        task_test_case.input = input_text
+    if expected_output is not None:
+        task_test_case.expected_output = expected_output
+    task_test_case.touch()
+    storage.save()
+    return jsonify(task_test_case.to_dict())

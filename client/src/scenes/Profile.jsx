@@ -1,93 +1,97 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import InputWithLabel from '../components/InputWithLabel';
 import TextEreaWithLabel from '../components/TextEreaWithLabel';
 import PrimaryBtn from '../components/PrimaryBtn';
-import { request } from '../tools/requestModule';
+import FormMessage from '../components/FormMessage';
+import PageStatus from '../components/PageStatus';
+import { DataContext } from '../components/dataContext';
+import { requestJson } from '../tools/requestModule';
+import { DEFAULT_AVATAR, getOrCreateProfile } from '../tools/avatar';
 
 export default function Profile() {
+	const { setUser } = useContext(DataContext);
 	const [email, setEmail] = useState('');
 	const [fname, setFname] = useState('');
 	const [lname, setLname] = useState('');
 	const [picUrl, setPicUrl] = useState('');
 	const [bio, setBio] = useState('');
-	const [showSubmitBtn, setShowSubmitBtn] = useState(false);
+	const [dirty, setDirty] = useState(false);
+	const [loading, setLoading] = useState(true);
+	const [loadError, setLoadError] = useState('');
+	const [formError, setFormError] = useState('');
+	const [success, setSuccess] = useState('');
+	const [saving, setSaving] = useState(false);
 
 
-	function updateProfile(e) {
-		e.preventDefault();
-
-		let requestHeader = {
-			method: "PUT",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ first_name: fname, last_name: lname }),
-		};
-		request("/users", requestHeader)
-			.catch((e) => console.error("Error getting user details:", e));
-
-		requestHeader = {
-			method: "PUT",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ profile_pic: picUrl, bio: bio }),
-		};
-		request("/users/profile", requestHeader)
-			.then(() => setShowSubmitBtn(false))
-			.catch((e) => console.error("Error getting user details:", e));
-	}
-	// get the user  data from the server and chack
-	// if he have a profile in not it will be created
+	// Load the account and the profile, creating a default profile if needed.
 	useEffect(() => {
-		let requestHeader = {
-			method: "GET",
-			headers: { "Content-Type": "application/json" },
-		};
-		request("/users", requestHeader).then((res) => {
-			setEmail(res.data.email);
-			setFname(res.data.first_name);
-			setLname(res.data.last_name);
-		}).catch((e) => console.error("Error getting user details:", e));
-
-		requestHeader = {
-			method: "GET",
-			headers: { "Content-Type": "application/json" },
-		};
-		request("/users/profile", requestHeader).then((res) => {
-			if (res.status === 200) {
-				setPicUrl(res.data.profile_pic);
-				setBio(res.data.bio);
-			} else initProfile();
-		}).then(() => setShowSubmitBtn(false))
-			.catch((e) => console.error("Error updating user profile:", e));
+		let active = true;
+		async function load() {
+			const userRes = await requestJson('/users');
+			const profileRes = await getOrCreateProfile(requestJson);
+			if (!active) return;
+			if (!userRes.ok) setLoadError(userRes.data.error);
+			else if (!profileRes.ok) setLoadError(profileRes.data.error);
+			else {
+				setEmail(userRes.data.email);
+				setFname(userRes.data.first_name);
+				setLname(userRes.data.last_name);
+				setPicUrl(profileRes.data.profile_pic || '');
+				setBio(profileRes.data.bio || '');
+			}
+			setLoading(false);
+		}
+		load();
+		return () => { active = false; };
 	}, []);
 
-	useEffect(() => setShowSubmitBtn(true),
-		[fname, lname, picUrl, bio]);
+	const edit = (setter) => (value) => {
+		setter(value);
+		setDirty(true);
+		setSuccess('');
+	};
 
-	function initProfile() {
-		const requestHeader = {
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ profile_pic: import.meta.env.VITE_DEFAULT_AVATAR, bio: 'Hello...' })
-		};
-		request("/users/profile", requestHeader).then((res) => {
-			setPicUrl(res.data.profile_pic);
-		}).catch((e) => console.error("Error Creating user profile:", e));
+	async function updateProfile(e) {
+		e.preventDefault();
+		setFormError('');
+		if (!fname.trim() || !lname.trim()) {
+			setFormError('First and last name are required.');
+			return;
+		}
+		setSaving(true);
+		const userRes = await requestJson('/users', 'PUT', { first_name: fname.trim(), last_name: lname.trim() });
+		const profileRes = userRes.ok
+			? await requestJson('/users/profile', 'PUT', { profile_pic: picUrl.trim(), bio })
+			: userRes;
+		setSaving(false);
+		if (!profileRes.ok) {
+			setFormError(profileRes.data.error);
+			return;
+		}
+		setUser(userRes.data);
+		setDirty(false);
+		setSuccess('Profile updated!');
 	}
 
+	if (loading) return <PageStatus loading message='Loading your profile...' />;
+	if (loadError) return <PageStatus error={loadError} />;
+
 	return <div>
-		<form className='flex gap-8 grid grid-cols-12'>
-			<div className='col-span-4'>
-				<img className='w-full border border-crimson-200' src={picUrl} />
+		<form className='grid grid-cols-12 gap-8' onSubmit={updateProfile} noValidate>
+			<div className='col-span-12 md:col-span-4'>
+				<img className='w-full max-w-xs border border-crimson-200' src={picUrl || DEFAULT_AVATAR} alt='Your avatar' />
 			</div>
-			<div className='col-span-6 flex flex-col gap-6'>
+			<div className='col-span-12 md:col-span-8 lg:col-span-6 flex flex-col gap-6'>
 				<div className='flex flex-col gap-3'>
-					<label className="block text-sm font-medium text-white">Email</label>
-					<span className='bg-violet-300 bg-opacity-40 border border-violet-100 text-violet-100 text-sm py-2 px-2 font-voilet-200 rounded-lg cursor-not-allowed'>{email}</span>
+					<span className='block text-sm font-medium text-white'>Email</span>
+					<span className='bg-violet-300 bg-opacity-40 border border-violet-100 text-violet-100 text-sm py-2 px-2 rounded-lg cursor-not-allowed break-all'>{email}</span>
 				</div>
-				<InputWithLabel label='First Name' type='text' identifier='first_name' value={fname} setValue={setFname} />
-				<InputWithLabel label='Last Name' type='text' identifier='last_name' value={lname} setValue={setLname} />
-				<InputWithLabel label='Avatar URL' type='text' identifier='avatar_url' value={picUrl} setValue={setPicUrl} />
-				<TextEreaWithLabel label='Bio' identifier='bio' value={bio} setValue={setBio} />
-				{showSubmitBtn ? <PrimaryBtn label='update' action={updateProfile} /> : null}
+				<InputWithLabel label='First Name' identifier='first_name' autoComplete='given-name' value={fname} setValue={edit(setFname)} required maxLength={128} />
+				<InputWithLabel label='Last Name' identifier='last_name' autoComplete='family-name' value={lname} setValue={edit(setLname)} required maxLength={128} />
+				<InputWithLabel label='Avatar URL' type='url' identifier='avatar_url' value={picUrl} setValue={edit(setPicUrl)} />
+				<TextEreaWithLabel label='Bio' identifier='bio' value={bio} setValue={edit(setBio)} />
+				<FormMessage error={formError} success={success} />
+				{dirty ? <PrimaryBtn label={saving ? 'Saving...' : 'Update'} disabled={saving} /> : null}
 			</div>
 		</form>
 	</div>

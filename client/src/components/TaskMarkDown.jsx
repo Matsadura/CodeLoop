@@ -1,33 +1,35 @@
-import { request } from '../tools/requestModule';
+import { requestJson } from '../tools/requestModule';
 import { useState, useEffect } from 'react';
 import Markdown from 'react-markdown';
+import PageStatus from './PageStatus';
 import './styles/TaskMarkDown.css';
 
 export default function TaskMardDown({ taskId }) {
-  const [taskTitle, setTaskTitle] = useState('');
-  const [taskBody, setTaskBody] = useState('');
+  const [task, setTask] = useState(null);
+  const [error, setError] = useState('');
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    getTaskData(taskId);
-  }, []);
-
-  function getTaskData(catalog_id) {
-    const request_header = {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-    };
-    request(`/tasks/${taskId}`, request_header).then((res) => {
-      setTaskTitle(res.data.title);
-      setTaskBody(res.data.description);
+    let active = true;
+    setError('');
+    requestJson(`/tasks/${taskId}`).then((res) => {
+      if (!active) return;
+      if (res.ok) setTask(res.data);
+      else setError(res.status === 404 ? 'This task does not exist (anymore).' : res.data.error);
     });
-  }
+    return () => { active = false; };
+  }, [taskId, attempt]);
+
+  if (error) return <PageStatus error={error} onRetry={() => setAttempt((a) => a + 1)} />;
+  if (!task) return <PageStatus loading message='Loading task...' />;
 
   return <div>
     <header>
-      <h1 className='bg-violet-500 text-wrap border-b px-4 py-6 text-2xl text-gray-50 font-bold'>{taskTitle}</h1>
+      <h1 className='bg-violet-500 text-wrap border-b px-4 py-6 text-2xl text-gray-50 font-bold'>{task.title}</h1>
     </header>
     <main className='task__markdown text-gray-200 p-4'>
-      <Markdown>{taskBody}</Markdown>
+      {/* react-markdown does not render raw HTML, so task content cannot inject scripts. */}
+      <Markdown>{task.description}</Markdown>
     </main>
   </div>
 }

@@ -1,4 +1,4 @@
-import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import UserAvatarWideScreen from './UserAvatarWideScreen';
 import NavigationWideScreen from './NavigationWideScreen';
 import PrimaryBtnOutline from './PrimaryBtnOutline';
@@ -6,10 +6,10 @@ import UserAvatarMobile from './UserAvatarMobile';
 import NavigationMobile from './NavigationMobile';
 import { Disclosure } from '@headlessui/react';
 import { FaCode } from 'react-icons/fa6';
-import { DataContext } from "./Context";
+import { DataContext } from './dataContext';
 import PrimaryBtn from './PrimaryBtn';
 import { useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const userNavigation = [
   { name: 'Your Profile', href: '/profile' },
@@ -18,7 +18,7 @@ const userNavigation = [
 ]
 
 export default function NavBar({ children, title, navigation }) {
-  const { user, isAuthenticated } = useContext(DataContext);
+  const { isAuthenticated } = useContext(DataContext);
   const navigate = useNavigate();
 
 
@@ -31,9 +31,9 @@ export default function NavBar({ children, title, navigation }) {
               <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div className="flex h-16 items-center justify-between">
                   <div className="flex items-center">
-                    <a className="flex-shrink-0" href="/">
-                      <FaCode className='text-crimson-200 h-8 w-8 text-4xl' />
-                    </a>
+                    <Link className="flex-shrink-0" to="/" aria-label="CodeLoop home">
+                      <FaCode className='text-crimson-200 h-8 w-8 text-4xl' aria-hidden='true' />
+                    </Link>
                     {/* big screen */}
                     <NavigationWideScreen navigation={navigation} />
                   </div>
@@ -66,7 +66,7 @@ export default function NavBar({ children, title, navigation }) {
 
               <Disclosure.Panel className="md:hidden">
                 <NavigationMobile navigation={navigation} />
-                <UserAvatarMobile user={user} userNavigation={userNavigation} />
+                <UserAvatarMobile userNavigation={userNavigation} />
               </Disclosure.Panel>
             </>
           )}

@@ -1,45 +1,19 @@
-import React, { useEffect, useState } from "react";
-import { DataContext } from "./Context";
-import { useContext } from "react";
-import { Navigate } from "react-router-dom";
-import { request } from "../tools/requestModule";
+import { useContext } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
+import { DataContext } from './dataContext';
+import PageStatus from './PageStatus';
 
+/**
+ * Renders `children` only for authenticated users; others are redirected
+ * to /login and come back to the requested page after logging in.
+ * With `open`, children always render (public pages).
+ */
 export const PrivateRoute = ({ open = false, children }) => {
-	const [isLoading, setIsLoading] = useState(true);
-	const { setAuth, setUser, isAuthenticated } = useContext(DataContext);
-	const token = localStorage.getItem("_token");
+	const { isAuthenticated, isLoading } = useContext(DataContext);
+	const location = useLocation();
 
-	if (!token && open) {
-		return children
-	}
-	const headers = {
-		headers: {
-			Authorization: `Bearer ${token}`,
-		},
-	};
-
-	useEffect(() => {
-		request("/users", headers)
-			.then((res) => {
-				if (res.status === 200) {
-					setUser(res.data);
-					setAuth(true);
-				} else {
-					localStorage.removeItem('_token');
-					setAuth(false);
-					setUser(null);
-				}
-			})
-			.finally(() => {
-				setIsLoading(false);
-			});
-	}, []);
-
-	if (isLoading) return null;
-
-	if (open) {
-		return children;
-	}
-
-	return isAuthenticated ? children : <Navigate to="/login" />;
+	if (open) return children;
+	if (isLoading) return <PageStatus loading message='Checking your session...' />;
+	if (!isAuthenticated) return <Navigate to='/login' replace state={{ from: location }} />;
+	return children;
 };

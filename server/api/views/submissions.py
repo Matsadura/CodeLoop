@@ -2,123 +2,49 @@
 
 Routes:
     - /tasks/<task_id>/submit:
-        - POST: Submit a task.
+        - POST: Submit code for a task and grade it with Judge0.
     - /tasks/<task_id>/submissions:
-        - GET: Retrieve all submissions for a task.
+        - GET: Retrieve the current user's submissions for a task.
     - /submissions/<submission_id>:
-        - GET: Retrieve a specific submission.
+        - GET: Retrieve one of the current user's submissions. Pending
+          submissions are refreshed from Judge0 (without waiting).
 
-Attributes:
-    - Submission: Class representing submissions.
-    - storage: Object for interacting with the database storage.
-    - Task: Class representing tasks.
-
-Exceptions:
-    - Invalid token: Raised when the JWT token is invalid.
-    - User not found: Raised when the user is not found in the database.
-    - Unauthorized: Raised when the user is not authorized to access
-        or modify the data.
-    - Invalid data: Raised when the request data is invalid or missing.
-
-Returns:
-    - JSON response containing the submission data
-    or appropriate error messages.
+Submit responses:
+    - 201: graded; ``status`` is ``correct`` or ``incorrect``.
+    - 202: accepted but still running; poll ``GET /submissions/<id>``.
+    - 503: the execution service is unavailable; the submission is stored
+      with status ``error`` and can be resubmitted later.
 """
+from api import grading, validation
 from api.views import app_views
-from api.views.auth import isAuthenticated
-from flask import jsonify, request
+from api.views.auth import current_user_id
+from api.views.common import fail, get_or_404
+from flask import current_app, jsonify
 from flask_jwt_extended import jwt_required
 from models import storage
 from models.submission import Submission
 from models.task import Task
+from models.task_test_cases import Task_Test_Cases
+
+MAX_CODE_LENGTH = 65000
 
 
-def test_submission(submission, code):
-    import time
-    import requests
-    from models.solution_result import Solution_Result
-    from models.task_test_cases import Task_Test_Cases
-    """Test the submission using Judge0."""
-    language = {'python': 71}
-    task_test_cases = storage.all_list_specific(
-        Task_Test_Cases, 'task_id', submission.task_id)
+def judge0_client():
+    return current_app.extensions['judge0_client']
 
-    test_cases = [{
-        "test_case_id": tc.id,
-        "stdin": tc.input,
-        "expected_output": tc.expected_output
-    } for tc in task_test_cases]
 
-    submission_result = {}
-    for test in test_cases:
-        json_data = {
-            'source_code': code,
-            'language_id': language[submission.language],
-            'stdin': test['stdin'],
-            'expected_output': test['expected_output']
-        }
+def judge0_settings():
+    return current_app.extensions['codeloop_settings'].judge0
 
-        response = requests.post('http://localhost:2358/submissions',
-                                 json=json_data)
 
-        if response.status_code != 201:
-            print("Submission failed:", response.json())
-            return
-
-        token = response.json().get('token')
-        print(f"Submission token: {token}")
-
-        while True:
-            result_url = f'http://localhost:2358/submissions/{token}'
-
-            result_response = requests.get(result_url)
-
-            if result_response.status_code != 200:
-                print("Error fetching r esult:", result_response.json())
-                return
-
-            result_data = result_response.json()
-
-            if result_data['status']['id'] in [1, 2]:
-                print("Submission is still processing...")
-                time.sleep(1)
-            else:
-                if result_data['status']['id'] == 3:
-                    status = 'pass'
-                elif result_data['status']['id'] == 4:
-                    status = 'fail'
-                else:
-                    status = 'error'
-                # tmp print(result_data)
-                submission_result[test['test_case_id']] = {
-                    'status': status,
-                    'stdout': result_data['stdout'],
-                    'time': result_data['time'],
-                    'stderr': result_data['stderr'],
-                }
-                solution_result_data = {
-                    'submission_id': submission.id,
-                    'task_test_case_id': test['test_case_id'],
-                    'stdin':  test['stdin'],
-                    'status': status,
-                    'stdout': result_data['stdout'],
-                    'expected_output':  test['expected_output'],
-                    'stderr': result_data['stderr'],
-                    'time': result_data['time'],
-                }
-                solution_result = Solution_Result(**solution_result_data)
-                storage.new(solution_result)
-                storage.save()
-                print(submission_result)
-                break
-
-        for value in submission_result.values():
-            if value['status'] == 'fail' or value['status'] == 'error':
-                submission.status = 'incorrect'
-                break
-            else:
-                submission.status = 'correct'
-        storage.save()
+def get_owned_submission(submission_id):
+    """Return the submission if it belongs to the current user"""
+    submission = get_or_404(Submission, submission_id,
+                            'Submission not found')
+    if submission.user_id != current_user_id():
+        # 404 rather than 403 so submission ids cannot be probed.
+        fail(404, 'Submission not found')
+    return submission
 
 
 @app_views.route('/tasks/<task_id>/submit', methods=['POST'])
@@ -131,64 +57,71 @@ def submit_task(task_id):
     POST:
     - Input:
         - code: string (required)
-        - language: string (required)
-
+        - language: string (required, e.g. "python")
     """
-    current_user = isAuthenticated()
-    task = storage.get_specific(Task, 'id', task_id)
-    if not task:
-        return jsonify({'error': 'Task not found'}), 404
-    if not request.is_json:
-        return jsonify({'error': 'Invalid JSON data'}), 400
-    data = request.get_json()
-    if not data.get('code'):
-        return jsonify({'error': 'Code is required'}), 400
-    if not data.get('language'):
-        return jsonify({'error': 'Language is required'}), 400
+    get_or_404(Task, task_id, 'Task not found')
+    data = validation.json_body()
+    code = validation.string(data, 'code', MAX_CODE_LENGTH, strip=False)
+    if not code.strip():
+        raise validation.ValidationError('Code is required', 'code')
+    language = validation.string(data, 'language', 32).lower()
+    client = judge0_client()
+    if client.language_id(language) is None or \
+            language not in Submission.language.type.enums:
+        supported = sorted(set(judge0_settings().language_ids) &
+                           set(Submission.language.type.enums))
+        raise validation.ValidationError(
+            f'Unsupported language "{language}". Supported: '
+            f'{", ".join(supported)}', 'language')
+
+    test_cases = storage.all_list_specific(Task_Test_Cases, 'task_id',
+                                           task_id)
+    if not test_cases:
+        fail(409, 'This task has no test cases yet')
+
     submission = Submission(
-        user_id=current_user,
+        user_id=current_user_id(),
         task_id=task_id,
-        code=data['code'],
-        language=data['language'],
+        code=code,
+        language=language,
         status='pending'
     )
     storage.new(submission)
     storage.save()
-    test_submission(submission, data['code'])
-    storage.save()
-    return jsonify(submission.to_dict()), 201
+
+    if not grading.start(client, submission, test_cases):
+        return jsonify({'error': submission.status_detail,
+                        'submission': submission.to_dict()}), 503
+
+    settings = judge0_settings()
+    done = grading.wait(client, submission, settings.sync_wait,
+                        settings.poll_interval)
+    return jsonify(submission.to_dict()), 201 if done else 202
 
 
 @app_views.route('/tasks/<task_id>/submissions', methods=['GET'])
 @jwt_required()
 def get_submissions(task_id):
-    """Get all submissions for a task
+    """Get the current user's submissions for a task, newest first
 
     - Header Authorization Bearer Token (required)
     """
-    current_user = isAuthenticated()
-    task = storage.get_specific(Task, 'id', task_id)
-    if not task:
-        return jsonify({'error': 'Task not found'}), 404
-    submissions = storage.all_list_specific(Submission, 'task_id', task_id)
-    my_submissions = []
-    for submission in submissions:
-        if submission.user_id == current_user:
-            my_submissions.append(submission)
-    return jsonify([submission.to_dict() for submission in my_submissions])
+    get_or_404(Task, task_id, 'Task not found')
+    submissions = storage.query(Submission).filter(
+        Submission.task_id == task_id,
+        Submission.user_id == current_user_id(),
+    ).order_by(Submission.created_at.desc()).all()
+    return jsonify([submission.to_dict() for submission in submissions])
 
 
 @app_views.route('/submissions/<submission_id>', methods=['GET'])
 @jwt_required()
 def get_submission(submission_id):
-    """Get a submission
+    """Get a submission, refreshing it from Judge0 if still pending
 
     - Header Authorization Bearer Token (required)
     """
-    current_user = isAuthenticated()
-    submission = storage.get_specific(Submission, 'id', submission_id)
-    if not submission:
-        return jsonify({'error': 'Submission not found'}), 404
-    if submission.user_id != current_user:
-        return jsonify({'error': 'Unauthorized'}), 401
+    submission = get_owned_submission(submission_id)
+    if submission.status == 'pending':
+        grading.refresh(judge0_client(), submission)
     return jsonify(submission.to_dict())

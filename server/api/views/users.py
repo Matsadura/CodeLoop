@@ -1,35 +1,32 @@
 """ Users related routes
 This module contains routes for managing user-related data, including
-creating, retrieving, updating, and deleting user profiles.
+retrieving, updating, and deleting the authenticated user's account.
 This module requires JWT authentication for access control.
 
 Routes:
     - /users:
-        - GET: Retrieve the current user's profile.
-        - DELETE: Delete the current user's profile.
-        - PUT: Update the current user's profile.
-
-Attributes:
-    - User: Class representing users.
-    - storage: Object for interacting with the database storage.
-
-Exceptions:
-    - Invalid token: Raised when the JWT token is invalid.
-    - User not found: Raised when the user is not found in the database.
-    - Unauthorized: Raised when the user is not authorized to access
-        or modify the data.
-    - Invalid data: Raised when the request data is invalid or missing.
+        - GET: Retrieve the current user's account.
+        - DELETE: Delete the current user's account.
+        - PUT: Update the current user's first/last name.
+    - /users/statistics:
+        - GET: Submission statistics of the current user.
+    - /users/statistics/categories:
+        - GET: Submission statistics of the current user per category.
 
 Returns:
     - JSON response containing the user data or appropriate error messages.
 """
+from api import validation
 from api.views import app_views
-from api.views.auth import isAuthenticated
-from datetime import datetime
+from api.views.auth import current_user_id
+from api.views.common import get_or_404
 from flask import jsonify, request
 from flask_jwt_extended import jwt_required
 from models import storage
 from models.user import User
+from sqlalchemy import func
+
+STATUSES = ('incorrect', 'correct', 'pending')
 
 
 @app_views.route('/users', methods=['GET'])
@@ -40,11 +37,8 @@ def get_user_profile():
     GET
         - Header: Authorization Bearer Token (required)
     """
-    current_user = isAuthenticated()
-    user_profile = storage.get_specific(User, 'id', current_user)
-    if not user_profile:
-        return jsonify({"error": "User not found"}), 404
-    return jsonify(user_profile.to_dict())
+    user = get_or_404(User, current_user_id(), 'User not found')
+    return jsonify(user.to_dict())
 
 
 @app_views.route('/users', methods=['DELETE', 'PUT'])
@@ -64,28 +58,31 @@ def update_user_profile():
         Output:
             - User profile data
     """
-    current_user = isAuthenticated()
-    user_profile = storage.get_specific(User, 'id', current_user)
-    if not user_profile:
-        return jsonify({"error": "User not found"}), 404
+    user = get_or_404(User, current_user_id(), 'User not found')
 
     if request.method == 'DELETE':
-        storage.delete(user_profile)
+        storage.delete(user)
         storage.save()
         return jsonify({"message": "User profile deleted"}), 200
 
-    if request.method == 'PUT':
-        data = request.get_json()
-        if not data:
-            return jsonify({"error": "No data provided"}), 400
-        if 'first_name' in data:
-            user_profile.first_name = data['first_name']
-        if 'last_name' in data:
-            user_profile.last_name = data['last_name']
-        user_profile.updated_at = datetime.now()
-        storage.save()
-        return jsonify(user_profile.to_dict()), 200
-    return jsonify({"error": "Invalid request method"}), 400
+    data = validation.json_body()
+    first_name = validation.string(data, 'first_name', 128, required=False)
+    last_name = validation.string(data, 'last_name', 128, required=False)
+    if first_name is not None:
+        user.first_name = first_name
+    if last_name is not None:
+        user.last_name = last_name
+    user.touch()
+    storage.save()
+    return jsonify(user.to_dict()), 200
+
+
+def _with_percentages(stats):
+    total = stats['count_submissions']
+    for status in STATUSES:
+        stats[f'{status}_%'] = (
+            stats[f'count_{status}'] / total * 100) if total else 0
+    return stats
 
 
 @app_views.route('/users/statistics', methods=['GET'])
@@ -96,32 +93,19 @@ def get_user_statistics():
     from models.task import Task
     from models.user_favorite import User_Favorite
 
-    current_user = isAuthenticated()
-    statistics = {}
-    statistics['count_favorites'] = storage.count_specific(
-        User_Favorite, 'user_id', current_user)
-    statistics['count_tasks'] = storage.count_specific(
-        Task, 'user_id', current_user)
-    statistics['count_submissions'] = storage.count_specific(
-        Submission, 'user_id', current_user)
-    statistics['count_incorrect'] = storage.count_specific_double(
-        Submission, 'user_id', current_user, 'status', 'incorrect')
-    statistics['count_correct'] = storage.count_specific_double(
-        Submission, 'user_id', current_user, 'status', 'correct')
-    statistics['count_pending'] = storage.count_specific_double(
-        Submission, 'user_id', current_user, 'status', 'pending')
-    if statistics['count_submissions'] == 0:
-        statistics['incorrect_%'] = 0
-        statistics['correct_%'] = 0
-        statistics['pending_%'] = 0
-    else:
-        statistics['incorrect_%'] = (statistics['count_incorrect'] /
-                                     statistics['count_submissions']) * 100
-        statistics['correct_%'] = (statistics['count_correct'] /
-                                   statistics['count_submissions']) * 100
-        statistics['pending_%'] = (statistics['count_pending'] /
-                                   statistics['count_submissions']) * 100
-    return jsonify(statistics)
+    user_id = current_user_id()
+    by_status = storage.count_grouped(Submission, 'status',
+                                      Submission.user_id == user_id)
+    statistics = {
+        'count_favorites': storage.count_specific(
+            User_Favorite, 'user_id', user_id),
+        'count_tasks': storage.count_specific(Task, 'user_id', user_id),
+        'count_submissions': sum(by_status.values()),
+        'count_error': by_status.get('error', 0),
+    }
+    for status in STATUSES:
+        statistics[f'count_{status}'] = by_status.get(status, 0)
+    return jsonify(_with_percentages(statistics))
 
 
 @app_views.route('/users/statistics/categories', methods=['GET'])
@@ -129,51 +113,37 @@ def get_user_statistics():
 def get_user_statistics_categories():
     """Get user statistics per category including
         submission counts and percentages"""
-    from flask import jsonify
     from models.category import Category
     from models.submission import Submission
     from models.task import Task
     from models.user_favorite import User_Favorite
 
-    current_user = isAuthenticated()
+    user_id = current_user_id()
+    session = storage.session
+
+    favorites = dict(session.query(
+        Task.category_id, func.count(User_Favorite.id))
+        .join(Task, User_Favorite.task_id == Task.id)
+        .filter(User_Favorite.user_id == user_id)
+        .group_by(Task.category_id).all())
+
+    submissions = {}
+    rows = session.query(
+        Task.category_id, Submission.status, func.count(Submission.id)) \
+        .join(Task, Submission.task_id == Task.id) \
+        .filter(Submission.user_id == user_id) \
+        .group_by(Task.category_id, Submission.status).all()
+    for category_id, status, count in rows:
+        submissions.setdefault(category_id, {})[status] = count
+
     statistics = {}
-    categories = storage.all_list(Category)
-
-    for category in categories:
+    for category in storage.all_list(Category):
+        by_status = submissions.get(category.id, {})
         category_stats = {
-            'count_favorites': 0,
-            'count_submissions': 0,
-            'count_incorrect': 0,
-            'count_correct': 0,
-            'count_pending': 0,
-            'incorrect_%': 0,
-            'correct_%': 0,
-            'pending_%': 0
+            'count_favorites': favorites.get(category.id, 0),
+            'count_submissions': sum(by_status.values()),
         }
-
-        tasks = storage.all_list_specific(Task, 'category_id', category.id)
-
-        for task in tasks:
-            category_stats['count_favorites'] += storage.count_specific_double(
-                User_Favorite, 'user_id', current_user, 'task_id', task.id)
-            category_stats['count_submissions'] += storage.count_specific_double(  # nopep8
-                Submission, 'user_id', current_user, 'task_id', task.id)
-            category_stats['count_incorrect'] += storage.count_specific_triple(
-                Submission, 'user_id', current_user, 'task_id', task.id,
-                'status', 'incorrect')
-            category_stats['count_correct'] += storage.count_specific_triple(
-                Submission, 'user_id', current_user, 'task_id', task.id,
-                'status', 'correct')
-            category_stats['count_pending'] += storage.count_specific_triple(
-                Submission, 'user_id', current_user, 'task_id', task.id,
-                'status', 'pending')
-
-        if category_stats['count_submissions'] > 0:
-            category_stats['incorrect_%'] = (category_stats['count_incorrect'] /  # nopep8
-                                             category_stats['count_submissions']) * 100  # nopep8
-            category_stats['correct_%'] = (category_stats['count_correct'] /
-                                           category_stats['count_submissions']) * 100  # nopep8
-            category_stats['pending_%'] = (category_stats['count_pending'] /
-                                           category_stats['count_submissions']) * 100  # nopep8
-        statistics[category.title] = category_stats
+        for status in STATUSES:
+            category_stats[f'count_{status}'] = by_status.get(status, 0)
+        statistics[category.title] = _with_percentages(category_stats)
     return jsonify(statistics)
